@@ -52,3 +52,19 @@
 - [x] 10.1 Add root `.gitignore` with common library ignores (e.g. node_modules, dist, coverage, storybook-static, .env\*, OS/IDE files)
 - [x] 10.2 Add Husky pre-commit check that current branch name matches a directory under `openspec/changes/` (fail commit if not)
 - [x] 10.3 Document in CONTRIBUTING: pre-commit branch-name check (and that CI also checks), and .gitignore / repo layout
+
+## 11. Archive branch support — Husky
+
+- [x] 11.1 Update the Husky pre-commit branch-name check to detect `-archive` suffix: if the branch ends with `-archive`, strip the suffix and verify the derived name exists under `openspec/changes/archive/` (fail if not found)
+- [x] 11.2 Update the Husky pre-commit hook to enforce that all staged files are under `openspec/` when on an `-archive` branch (abort commit if any staged file is outside `openspec/`)
+- [x] 11.3 Verify: committing non-OpenSpec files on an `-archive` branch is blocked; committing only `openspec/` files passes
+
+## 12. Archive branch support — CI
+
+- [x] 12.1 Update the CI branch-name check job to handle `-archive` branches: if the PR head branch ends with `-archive`, strip the suffix and check for a matching entry under `openspec/changes/archive/` (fail if not found); non-`-archive` branches continue to check `openspec/changes/` as before
+- [x] 12.2 Add a CI job (or step) that runs only on `-archive` branches: get the PR diff and fail if any changed file is outside `openspec/`
+- [x] 12.3 Verify: a PR from `setup-library-archive` with only `openspec/` changes passes all new checks; a PR with non-`openspec/` changes fails
+
+## 13. Archive branch — documentation
+
+- [x] 13.1 Update CONTRIBUTING.md to document the archive branch convention: once a change is archived, commit it on a `<change-name>-archive` branch; explain the Husky and CI checks that enforce this; clarify that only `openspec/` changes are permitted on archive branches

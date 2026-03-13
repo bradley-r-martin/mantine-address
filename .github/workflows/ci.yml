@@ -19,11 +19,47 @@ jobs:
             echo "::error::Could not determine head branch name"
             exit 1
           fi
+
+          # Archive branch: ends with "-archive"
+          if [[ "$BRANCH" == *-archive ]]; then
+            CHANGE_NAME="${BRANCH%-archive}"
+            ARCHIVE_MATCH=$(find openspec/changes/archive -maxdepth 1 -type d -name "*-${CHANGE_NAME}" 2>/dev/null | head -n 1)
+            if [ -z "$ARCHIVE_MATCH" ]; then
+              echo "::error::Branch '$BRANCH' is an archive branch but no archived change matching '*-${CHANGE_NAME}' was found under openspec/changes/archive/. Archive the change first."
+              exit 1
+            fi
+            echo "✓ Archive branch '$BRANCH' matches archived change '$ARCHIVE_MATCH'"
+            exit 0
+          fi
+
+          # Active change branch: must match a directory directly under openspec/changes/
           if [ ! -d "openspec/changes/$BRANCH" ]; then
             echo "::error::Branch name '$BRANCH' must match an OpenSpec change. Create openspec/changes/$BRANCH/ (e.g. run 'openspec new change $BRANCH') or use a branch named after an existing change (e.g. setup-library)."
             exit 1
           fi
           echo "✓ Branch '$BRANCH' matches OpenSpec change openspec/changes/$BRANCH/"
+
+  archive-scope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: |
+          BRANCH="${{ github.head_ref }}"
+          # Only run this check on archive branches
+          if [[ "$BRANCH" != *-archive ]]; then
+            echo "Not an archive branch; skipping archive file-scope check."
+            exit 0
+          fi
+          # Collect all files changed in this PR
+          BAD_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} 2>/dev/null | grep -v '^openspec/' || true)
+          if [ -n "$BAD_FILES" ]; then
+            echo "::error::Archive branch '$BRANCH' may only contain changes to files under openspec/. The following files are not allowed:"
+            echo "$BAD_FILES" | while read -r f; do echo "::error::  $f"; done
+            exit 1
+          fi
+          echo "✓ All changed files are under openspec/ — archive scope check passed"
 
   test:
     runs-on: ubuntu-latest
@@ -102,6 +138,8 @@ jobs:
           if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} 2>/dev/null | grep -q '^openspec/changes/'; then
             for dir in openspec/changes/*/; do
               [ -d "$dir" ] || continue
+              # Skip the archive container directory itself
+              [ "$(basename "$dir")" = "archive" ] && continue
               if [ -f "${dir}tasks.md" ]; then
                 echo "✓ OpenSpec change $(basename "$dir") has tasks.md"
               else

@@ -61,3 +61,8 @@ The repository SHALL provide contribution documentation (e.g. CONTRIBUTING.md or
 
 - **WHEN** a contributor reads the contribution documentation
 - **THEN** it states that the name of the branch used for a PR must match an OpenSpec change (e.g. branch `setup-library` for the change in `openspec/changes/setup-library/`), and that CI will fail if the branch name does not match a directory under `openspec/changes/`
+
+#### Scenario: Archive branch naming and restrictions are documented
+
+- **WHEN** a contributor reads the contribution documentation
+- **THEN** it explains that once a change has been archived, the archive commit must be made on a branch named `<change-name>-archive` (e.g. `setup-library-archive`), that both Husky and CI will verify the corresponding entry exists under `openspec/changes/archive/`, and that archive branch commits must contain only files under `openspec/` (no source code or configuration changes permitted)
