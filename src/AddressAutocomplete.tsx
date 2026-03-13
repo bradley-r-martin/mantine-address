@@ -126,7 +126,7 @@ export function AddressAutocomplete({
 
   // When no results, add a disabled sentinel item so the dropdown stays open and shows the message.
   const data: (string | ComboboxItem)[] = showNoResults
-    ? [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
+    ? [{ value: NO_RESULTS_VALUE, disabled: true }]
     : suggestions.map((s) => s.label);
 
   return (
