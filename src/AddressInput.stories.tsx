@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, createTheme } from '@mantine/core';
 import { AddressInput } from './AddressInput';
 
 const meta: Meta<typeof AddressInput> = {
@@ -57,4 +57,38 @@ export const WithError: Story = {
     placeholder: 'Enter address...',
     error: 'A valid address is required',
   },
+};
+
+/**
+ * Default props and theming via `MantineProvider` and `createTheme`.
+ * The theme sets default `label` and `placeholder` for `AddressInput`;
+ * the second input overrides with explicit props.
+ */
+export const WithThemeDefaultProps: Story = {
+  name: 'With theme defaultProps',
+  decorators: [
+    (Story) => {
+      const theme = createTheme({
+        components: {
+          AddressInput: AddressInput.extend({
+            defaultProps: {
+              label: 'Street address',
+              placeholder: 'Start typing your address...',
+            },
+          }),
+        },
+      });
+      return (
+        <MantineProvider theme={theme}>
+          <Story />
+        </MantineProvider>
+      );
+    },
+  ],
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <AddressInput />
+      <AddressInput label="Custom label" placeholder="Overridden placeholder" />
+    </div>
+  ),
 };

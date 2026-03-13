@@ -4,6 +4,9 @@ import { AddressInput } from './index';
 describe('library', () => {
   it('exports AddressInput', () => {
     expect(AddressInput).toBeDefined();
-    expect(typeof AddressInput).toBe('function');
+    // Factory component is ForwardRefExoticComponent (object with extend/withProps)
+    expect(
+      typeof AddressInput === 'function' || typeof AddressInput === 'object'
+    ).toBe(true);
   });
 });
