@@ -393,4 +393,128 @@ describe('AddressAutocomplete', () => {
       expect(adapter.getSuggestions).toHaveBeenCalled();
     });
   });
+
+  describe('controlled mode', () => {
+    it('clears display and typed state when value is set to null', async () => {
+      const adapter = createMockAdapter();
+      const { rerender } = renderComponent({
+        adapter,
+        value: mockAddress,
+        onChange: () => {},
+      });
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('123 Main St, Springfield IL 62701 US');
+
+      rerender(
+        <MantineProvider>
+          <AddressAutocomplete
+            adapter={adapter}
+            value={null}
+            onChange={() => {}}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {});
+
+      expect(input).toHaveValue('');
+    });
+  });
+
+  describe('form support: hidden inputs', () => {
+    it('renders hidden inputs with correct name and value when name and address are set', () => {
+      renderComponent({
+        adapter: createMockAdapter(),
+        name: 'address',
+        value: mockAddress,
+      });
+
+      expect(
+        document.querySelector('input[name="address[street_number]"]')
+      ).toHaveValue('123');
+      expect(
+        document.querySelector('input[name="address[street_name]"]')
+      ).toHaveValue('Main St');
+      expect(
+        document.querySelector('input[name="address[suburb]"]')
+      ).toHaveValue('Springfield');
+      expect(
+        document.querySelector('input[name="address[state]"]')
+      ).toHaveValue('IL');
+      expect(
+        document.querySelector('input[name="address[postcode]"]')
+      ).toHaveValue('62701');
+      expect(
+        document.querySelector('input[name="address[country]"]')
+      ).toHaveValue('US');
+    });
+
+    it('omits hidden inputs when name is omitted', () => {
+      renderComponent({
+        adapter: createMockAdapter(),
+        value: mockAddress,
+      });
+
+      expect(
+        document.querySelector('input[name="address[suburb]"]')
+      ).toBeNull();
+      expect(document.querySelector('input[name^="address["]')).toBeNull();
+    });
+
+    it('renders no address hidden inputs when value is null', () => {
+      renderComponent({
+        adapter: createMockAdapter(),
+        name: 'address',
+        value: null,
+      });
+
+      expect(
+        document.querySelector('input[name="address[suburb]"]')
+      ).toBeNull();
+    });
+
+    it('serializes latitude and longitude as strings in hidden inputs', () => {
+      const addressWithCoords: Address = {
+        ...mockAddress,
+        latitude: 39.78,
+        longitude: -89.65,
+      };
+      renderComponent({
+        adapter: createMockAdapter(),
+        name: 'location',
+        value: addressWithCoords,
+      });
+
+      expect(
+        document.querySelector('input[name="location[latitude]"]')
+      ).toHaveValue('39.78');
+      expect(
+        document.querySelector('input[name="location[longitude]"]')
+      ).toHaveValue('-89.65');
+    });
+  });
+
+  describe('form support: ref reset', () => {
+    it('ref.reset() clears uncontrolled address and typed input', async () => {
+      const adapter = createMockAdapter();
+      const ref = {
+        current: null as React.ComponentRef<typeof AddressAutocomplete> | null,
+      };
+      renderComponent({
+        adapter,
+        ref,
+        defaultValue: mockAddress,
+      });
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('123 Main St, Springfield IL 62701 US');
+
+      await act(async () => {
+        ref.current?.reset();
+      });
+
+      expect(input).toHaveValue('');
+    });
+  });
 });
