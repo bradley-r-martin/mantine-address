@@ -144,18 +144,34 @@ interface AddressSuggestion {
 
 When present, `AddressAutocomplete` renders the matching portions of each suggestion label in **bold** inside the dropdown. Adapters that don't have this data can simply omit the field — the label renders as plain text. The built-in `GooglePlacesAdapter` populates this automatically from the Google Places API response.
 
+### Form support (controlled, uncontrolled, native forms)
+
+The component supports both **controlled** and **uncontrolled** usage:
+
+- **Controlled:** pass `value` and `onChange`; the parent owns the address state. When the parent sets `value` to `null` (e.g. on form reset), the input clears.
+- **Uncontrolled:** pass `defaultValue` only; the component owns state. Use the ref’s `reset()` method to clear after a native form reset: `ref.current?.reset()`.
+
+For **native HTML forms**, pass a `name` prop (e.g. `name="address"`). The component renders hidden `<input type="hidden">` elements for each defined address field so that form submit or `FormData` includes keys like `address[suburb]`, `address[postcode]`, etc. Omit `name` to avoid rendering hidden inputs.
+
+With **@mantine/form**, wire the address field with `value={form.values.address}` and `onChange={(address) => form.setFieldValue('address', address)}`; `form.reset()` will then clear the address.
+
+Storybook includes **Form / Controlled**, **Form / Uncontrolled**, **Form / With reset**, and **Form / Native form (hidden inputs)** for examples.
+
 ### Props
 
-| Prop                               | Type                                 | Default              | Description                                                                                    |
-| ---------------------------------- | ------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------- |
-| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`)                         |
-| `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                      |
-| `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                             |
-| `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                   |
-| `region`                           | `AddressRegion`                      | —                    | When set (e.g. `'AU'`), the displayed address (when value is set) is formatted for this region |
-| `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                           |
-| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query    |
-| + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)             |
+| Prop                               | Type                                 | Default              | Description                                                                                                |
+| ---------------------------------- | ------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`)                                     |
+| `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                                  |
+| `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                                         |
+| `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                               |
+| `region`                           | `AddressRegion`                      | —                    | When set (e.g. `'AU'`), the displayed address (when value is set) is formatted for this region             |
+| `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`). |
+| `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                       |
+| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query                |
+| + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                         |
+
+The component’s ref type is `AddressAutocompleteRef` (extends `HTMLInputElement` with `reset(): void`). Use the ref for focus and to call `reset()` when uncontrolled.
 
 #### Built-in UX behaviors
 

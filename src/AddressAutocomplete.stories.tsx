@@ -5,6 +5,7 @@ import {
   MantineProvider,
   Button,
   Text,
+  TextInput,
   Stack,
   Code,
   createTheme,
@@ -463,6 +464,149 @@ export const NoResults: Story = {
     placeholder: 'Type anything — no results will be returned…',
     debounce: 300,
   },
+};
+
+// --------------------------------------------------------------------------
+// Form support: controlled and uncontrolled
+// --------------------------------------------------------------------------
+
+/**
+ * Controlled: parent holds state, Clear button sets address to null.
+ */
+function ControlledStory() {
+  const [address, setAddress] = useState<Address | null>(null);
+  return (
+    <Stack gap="md" style={{ maxWidth: 480 }}>
+      <AddressAutocomplete
+        adapter={mockAdapter}
+        label="Address (controlled)"
+        placeholder="Select an address…"
+        value={address}
+        onChange={setAddress}
+      />
+      <Stack gap="xs">
+        <Text size="sm" c="dimmed">
+          Current value: {address ? addressToString(address) : '—'}
+        </Text>
+        <Button variant="light" size="xs" onClick={() => setAddress(null)}>
+          Clear
+        </Button>
+      </Stack>
+    </Stack>
+  );
+}
+
+export const FormControlled: Story = {
+  name: 'Form / Controlled',
+  render: () => <ControlledStory />,
+};
+
+/**
+ * Uncontrolled: only defaultValue, no value/onChange.
+ */
+export const FormUncontrolled: Story = {
+  name: 'Form / Uncontrolled',
+  args: {
+    adapter: mockAdapter,
+    label: 'Address (uncontrolled)',
+    placeholder: 'Select an address…',
+    defaultValue: null,
+  },
+};
+
+// --------------------------------------------------------------------------
+// Form support: Mantine form and native form
+// --------------------------------------------------------------------------
+
+/**
+ * Form with address field (controlled); Reset clears the form and the address.
+ * With @mantine/form you would use: value={form.values.address},
+ * onChange={(address) => form.setFieldValue('address', address)}, and form.reset().
+ */
+function MantineFormStory() {
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState<Address | null>(null);
+  const reset = () => {
+    setName('');
+    setAddress(null);
+  };
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        console.log('Submit:', { name, address });
+      }}
+    >
+      <Stack gap="md" style={{ maxWidth: 480 }}>
+        <TextInput
+          label="Name"
+          placeholder="Your name"
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+        />
+        <AddressAutocomplete
+          adapter={mockAdapter}
+          label="Address"
+          placeholder="Select an address…"
+          value={address}
+          onChange={setAddress}
+        />
+        <Stack gap="xs">
+          <Button type="submit">Submit</Button>
+          <Button type="button" variant="light" onClick={reset}>
+            Reset form
+          </Button>
+        </Stack>
+      </Stack>
+    </form>
+  );
+}
+
+export const FormMantineForm: Story = {
+  name: 'Form / With reset (Mantine form pattern)',
+  render: () => <MantineFormStory />,
+};
+
+/**
+ * Native form with name prop; submit shows FormData with address[suburb], etc.
+ */
+function NativeFormStory() {
+  const [submitted, setSubmitted] = useState<Record<string, string> | null>(
+    null
+  );
+  return (
+    <Stack gap="md" style={{ maxWidth: 480 }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const data: Record<string, string> = {};
+          new FormData(form).forEach((value, key) => {
+            data[key] = String(value);
+          });
+          setSubmitted(data);
+        }}
+      >
+        <AddressAutocomplete
+          adapter={mockAdapter}
+          name="address"
+          label="Address"
+          placeholder="Select an address…"
+        />
+        <Button type="submit" mt="md">
+          Submit (log FormData)
+        </Button>
+      </form>
+      {submitted != null && (
+        <Code block>{JSON.stringify(submitted, null, 2)}</Code>
+      )}
+    </Stack>
+  );
+}
+
+export const FormNativeForm: Story = {
+  name: 'Form / Native form (hidden inputs)',
+  render: () => <NativeFormStory />,
 };
 
 export const WithGooglePlacesAdapter = {

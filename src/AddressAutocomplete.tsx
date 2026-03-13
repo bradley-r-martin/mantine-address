@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useImperativeHandle } from 'react';
 import {
   Autocomplete,
   Loader,
@@ -11,6 +11,25 @@ import type { Factory } from '@mantine/core';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
 import { addressToString, formatAddressForRegion } from './formatAddress';
 import type { AddressRegion } from './formatAddress';
+
+/** Keys of Address that are serialized as hidden form inputs, in stable order. */
+const ADDRESS_FORM_KEYS: (keyof Address)[] = [
+  'place_id',
+  'building_name',
+  'level',
+  'unit',
+  'lot_no',
+  'street_number',
+  'street_name',
+  'street_type',
+  'street_suffix',
+  'suburb',
+  'state',
+  'postcode',
+  'country',
+  'latitude',
+  'longitude',
+];
 
 /** Sentinel value used to render the "no results" row inside the dropdown. */
 const NO_RESULTS_VALUE = '__mantine-address-no-results__';
@@ -43,6 +62,11 @@ export interface AddressAutocompleteProps extends Omit<
    * (e.g. 'AU' for Australian state codes and conventions).
    */
   region?: AddressRegion;
+  /**
+   * Name for native form participation. When set, hidden inputs are rendered for each defined
+   * address field under `{name}[field]` (e.g. name="address" → address[suburb], address[postcode]).
+   */
+  name?: string;
   /** Debounce delay in milliseconds before fetching suggestions. Defaults to 300. */
   debounce?: number;
   /**
@@ -52,9 +76,14 @@ export interface AddressAutocompleteProps extends Omit<
   nothingFoundMessage?: React.ReactNode;
 }
 
+export interface AddressAutocompleteRef extends HTMLInputElement {
+  /** Clears the selected address and typed input. Use after form reset when uncontrolled. */
+  reset(): void;
+}
+
 export type AddressAutocompleteFactory = Factory<{
   props: AddressAutocompleteProps;
-  ref: HTMLInputElement;
+  ref: AddressAutocompleteRef;
 }>;
 
 const defaultProps = {
@@ -90,6 +119,34 @@ function highlightLabel(
   return <span>{parts}</span>;
 }
 
+function renderHiddenInputs(
+  name: string,
+  address: Address | null
+): React.ReactNode {
+  if (!name || !address) return null;
+  const entries: Array<[keyof Address, string]> = [];
+  for (const key of ADDRESS_FORM_KEYS) {
+    const v = address[key];
+    if (v === undefined || v === null) continue;
+    const value = typeof v === 'number' ? String(v) : v;
+    entries.push([key, value]);
+  }
+  return (
+    <>
+      {entries.map(([field, value]) => (
+        <input
+          key={field}
+          type="hidden"
+          name={`${name}[${field}]`}
+          value={value}
+          readOnly
+          aria-hidden
+        />
+      ))}
+    </>
+  );
+}
+
 export const AddressAutocomplete = factory<AddressAutocompleteFactory>(
   (_props, ref) => {
     const props = useProps('AddressAutocomplete', defaultProps, _props);
@@ -100,6 +157,7 @@ export const AddressAutocomplete = factory<AddressAutocompleteFactory>(
       value: valueProp,
       defaultValue,
       onChange,
+      name: nameProp,
       rightSection,
       nothingFoundMessage,
       ...rest
@@ -112,6 +170,27 @@ export const AddressAutocomplete = factory<AddressAutocompleteFactory>(
       useState<Address | null>(() => defaultValue ?? null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const requestIdRef = useRef(0);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const reset = () => {
+      setTypedInput('');
+      setUncontrolledAddress(null);
+      setSuggestions([]);
+      setIsLoading(false);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      requestIdRef.current++;
+      onChange?.(null);
+    };
+
+    useImperativeHandle(ref, () => {
+      const el = inputRef.current;
+      if (!el) return null as unknown as AddressAutocompleteRef;
+      (el as AddressAutocompleteRef).reset = reset;
+      return el as AddressAutocompleteRef;
+    }, [reset]);
 
     const isControlled = valueProp !== undefined;
     const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
@@ -185,39 +264,44 @@ export const AddressAutocomplete = factory<AddressAutocompleteFactory>(
       : suggestions.map((s) => s.label);
 
     return (
-      <Autocomplete
-        ref={ref}
-        data={data}
-        value={displayValue}
-        onChange={handleChange}
-        onOptionSubmit={handleOptionSubmit}
-        rightSection={
-          rightSection ??
-          (isLoading ? (
-            <span role="status" aria-label="Loading suggestions">
-              <Loader size="xs" />
-            </span>
-          ) : undefined)
-        }
-        renderOption={({ option }) => {
-          if (option.value === NO_RESULTS_VALUE) {
-            return (
-              <span
-                style={{
-                  color: 'var(--mantine-color-dimmed)',
-                  cursor: 'default',
-                }}
-              >
-                {nothingFoundMessage}
+      <>
+        {nameProp ? renderHiddenInputs(nameProp, address) : null}
+        <Autocomplete
+          ref={inputRef}
+          data={data}
+          value={displayValue}
+          onChange={handleChange}
+          onOptionSubmit={handleOptionSubmit}
+          rightSection={
+            rightSection ??
+            (isLoading ? (
+              <span role="status" aria-label="Loading suggestions">
+                <Loader size="xs" />
               </span>
-            );
+            ) : undefined)
           }
-          const suggestion = suggestions.find((s) => s.label === option.value);
-          return highlightLabel(option.value, suggestion?.matchedSubstrings);
-        }}
-        filter={({ options }) => options}
-        {...rest}
-      />
+          renderOption={({ option }) => {
+            if (option.value === NO_RESULTS_VALUE) {
+              return (
+                <span
+                  style={{
+                    color: 'var(--mantine-color-dimmed)',
+                    cursor: 'default',
+                  }}
+                >
+                  {nothingFoundMessage}
+                </span>
+              );
+            }
+            const suggestion = suggestions.find(
+              (s) => s.label === option.value
+            );
+            return highlightLabel(option.value, suggestion?.matchedSubstrings);
+          }}
+          filter={({ options }) => options}
+          {...rest}
+        />
+      </>
     );
   }
 );
