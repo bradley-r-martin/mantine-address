@@ -1,5 +1,5 @@
 import type {
-  AddressDetails,
+  Address,
   AddressLookupAdapter,
   AddressSuggestion,
 } from '../types';
@@ -23,23 +23,30 @@ function assertGoogleMapsLoaded(): void {
 }
 
 function mapAddressComponents(
-  components: google.maps.GeocoderAddressComponent[]
-): AddressDetails {
-  const get = (type: string): string | undefined =>
+  components: google.maps.GeocoderAddressComponent[],
+  placeId?: string,
+  lat?: number,
+  lng?: number
+): Address {
+  const getLong = (type: string): string | undefined =>
     components.find((c) => c.types.includes(type))?.long_name || undefined;
+  const getShort = (type: string): string | undefined =>
+    components.find((c) => c.types.includes(type))?.short_name || undefined;
 
-  const streetNumber = get('street_number') ?? '';
-  const route = get('route') ?? '';
-  const streetAddress =
-    [streetNumber, route].filter(Boolean).join(' ') || undefined;
-
-  return {
-    streetAddress,
-    city: get('locality') ?? get('administrative_area_level_3'),
-    state: get('administrative_area_level_1'),
-    postalCode: get('postal_code'),
-    country: get('country'),
+  const address: Address = {
+    place_id: placeId,
+    street_number: getLong('street_number'),
+    street_name: getLong('route'),
+    street_type: undefined,
+    street_suffix: undefined,
+    suburb: getLong('locality') ?? getLong('administrative_area_level_3'),
+    state: getLong('administrative_area_level_1'),
+    postcode: getLong('postal_code'),
+    country: getShort('country') ?? getLong('country'),
+    latitude: lat,
+    longitude: lng,
   };
+  return address;
 }
 
 export class GooglePlacesAdapter implements AddressLookupAdapter {
@@ -88,7 +95,7 @@ export class GooglePlacesAdapter implements AddressLookupAdapter {
     });
   }
 
-  async getDetails(id: string): Promise<AddressDetails> {
+  async getDetails(id: string): Promise<Address> {
     assertGoogleMapsLoaded();
 
     const mapEl = document.createElement('div');
@@ -96,7 +103,10 @@ export class GooglePlacesAdapter implements AddressLookupAdapter {
 
     return new Promise((resolve, reject) => {
       service.getDetails(
-        { placeId: id, fields: ['address_components'] },
+        {
+          placeId: id,
+          fields: ['address_components', 'geometry', 'place_id'],
+        },
         (result, status) => {
           if (
             status !== google.maps.places.PlacesServiceStatus.OK ||
@@ -107,7 +117,29 @@ export class GooglePlacesAdapter implements AddressLookupAdapter {
             );
             return;
           }
-          resolve(mapAddressComponents(result.address_components));
+          const location = result.geometry?.location;
+          const latValue = location?.lat;
+          const lngValue = location?.lng;
+          const lat =
+            typeof latValue === 'number'
+              ? latValue
+              : typeof latValue === 'function'
+                ? (latValue as () => number)()
+                : undefined;
+          const lng =
+            typeof lngValue === 'number'
+              ? lngValue
+              : typeof lngValue === 'function'
+                ? (lngValue as () => number)()
+                : undefined;
+          resolve(
+            mapAddressComponents(
+              result.address_components,
+              result.place_id ?? id,
+              lat,
+              lng
+            )
+          );
         }
       );
     });

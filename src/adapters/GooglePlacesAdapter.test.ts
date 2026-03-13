@@ -187,24 +187,40 @@ describe('GooglePlacesAdapter', () => {
       },
     ];
 
-    it('returns mapped AddressDetails on success', async () => {
+    it('returns mapped Address (uniform canonical shape) on success', async () => {
       const { mockGetDetails } = setupGoogleMock();
       mockGetDetails.mockImplementation(
         (_req: unknown, cb: (result: unknown, status: string) => void) => {
-          cb({ address_components: mockAddressComponents }, 'OK');
+          cb(
+            {
+              address_components: mockAddressComponents,
+              place_id: 'place1',
+              geometry: undefined,
+            },
+            'OK'
+          );
         }
       );
 
       const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      const details = await adapter.getDetails('place1');
+      const address = await adapter.getDetails('place1');
 
-      expect(details).toEqual({
-        streetAddress: '123 Main St',
-        city: 'Springfield',
+      expect(address).toEqual({
+        place_id: 'place1',
+        street_number: '123',
+        street_name: 'Main St',
+        street_type: undefined,
+        street_suffix: undefined,
+        suburb: 'Springfield',
         state: 'Illinois',
-        postalCode: '62701',
-        country: 'United States',
+        postcode: '62701',
+        country: 'US',
+        latitude: undefined,
+        longitude: undefined,
       });
+      expect(address).not.toHaveProperty('streetAddress');
+      expect(address).not.toHaveProperty('city');
+      expect(address).not.toHaveProperty('postalCode');
     });
 
     it('rejects on non-OK status', async () => {

@@ -2,22 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { AddressAutocomplete } from './AddressAutocomplete';
-import type {
-  AddressDetails,
-  AddressLookupAdapter,
-  AddressSuggestion,
-} from './types';
+import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },
   { id: 'id2', label: '456 Oak Ave, Chicago, IL' },
 ];
 
-const mockDetails: AddressDetails = {
-  streetAddress: '123 Main St',
-  city: 'Springfield',
+const mockAddress: Address = {
+  street_number: '123',
+  street_name: 'Main St',
+  suburb: 'Springfield',
   state: 'IL',
-  postalCode: '62701',
+  postcode: '62701',
   country: 'US',
 };
 
@@ -26,7 +23,7 @@ function createMockAdapter(
 ): AddressLookupAdapter {
   return {
     getSuggestions: vi.fn().mockResolvedValue(mockSuggestions),
-    getDetails: vi.fn().mockResolvedValue(mockDetails),
+    getDetails: vi.fn().mockResolvedValue(mockAddress),
     ...overrides,
   };
 }
@@ -351,10 +348,10 @@ describe('AddressAutocomplete', () => {
   });
 
   describe('option selection', () => {
-    it('calls getDetails when an option is submitted', async () => {
+    it('calls getDetails and onChange(address) when an option is submitted', async () => {
       const adapter = createMockAdapter();
-      const onAddressSelect = vi.fn();
-      renderComponent({ adapter, onAddressSelect });
+      const onChange = vi.fn();
+      renderComponent({ adapter, onChange });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123 Main' },
@@ -372,17 +369,17 @@ describe('AddressAutocomplete', () => {
         await act(async () => {
           fireEvent.click(options[0]);
         });
-        // Flush the getDetails promise and onAddressSelect callback
+        // Flush the getDetails promise and onChange callback
         await act(async () => {});
 
         expect(adapter.getDetails).toHaveBeenCalledWith('id1');
-        expect(onAddressSelect).toHaveBeenCalledWith(mockDetails);
+        expect(onChange).toHaveBeenCalledWith(mockAddress);
       }
       // If Mantine doesn't render options in jsdom the getSuggestions assertion
       // above is still sufficient to verify the fetch flow.
     });
 
-    it('does not throw when onAddressSelect is not provided', async () => {
+    it('does not throw when onChange is not provided', async () => {
       const adapter = createMockAdapter();
       renderComponent({ adapter });
 

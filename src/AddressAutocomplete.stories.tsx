@@ -3,11 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { MantineProvider, Button, Text, Stack, Code } from '@mantine/core';
 import { AddressAutocomplete } from './AddressAutocomplete';
-import type {
-  AddressLookupAdapter,
-  AddressSuggestion,
-  AddressDetails,
-} from './types';
+import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
+import { addressToString, addressToEnvelopeString } from './formatAddress';
 import { GooglePlacesAdapter } from './adapters/GooglePlacesAdapter';
 
 // Pre-filled at build time if the env var is set; users can override in the Controls panel.
@@ -25,11 +22,12 @@ const STUB_SUGGESTIONS: AddressSuggestion[] = [
   { id: 'id3', label: '123 Main Blvd, Peoria, IL 61602, USA' },
 ];
 
-const STUB_DETAILS: AddressDetails = {
-  streetAddress: '123 Main St',
-  city: 'Springfield',
+const STUB_ADDRESS: Address = {
+  street_number: '123',
+  street_name: 'Main St',
+  suburb: 'Springfield',
   state: 'IL',
-  postalCode: '62701',
+  postcode: '62701',
   country: 'US',
 };
 
@@ -43,7 +41,7 @@ const mockAdapter: AddressLookupAdapter = {
   },
   getDetails: async () => {
     await new Promise((r) => setTimeout(r, 100));
-    return STUB_DETAILS;
+    return STUB_ADDRESS;
   },
 };
 
@@ -180,8 +178,8 @@ function GooglePlacesStory({
         adapter={adapterRef.current}
         label="Address (Google Places)"
         placeholder="Start typing a real address…"
-        onAddressSelect={(address) =>
-          console.log('[GooglePlaces] selected:', address)
+        onChange={(address) =>
+          address != null && console.log('[GooglePlaces] selected:', address)
         }
         {...autocompleteProps}
         style={{ maxWidth: 480 }}
@@ -213,10 +211,17 @@ const meta: Meta<typeof AddressAutocomplete> = {
         'An object implementing `AddressLookupAdapter` — provides `getSuggestions` and `getDetails`.',
       table: { type: { summary: 'AddressLookupAdapter' } },
     },
-    onAddressSelect: {
+    onChange: {
       description:
-        'Called with structured `AddressDetails` when the user selects a suggestion.',
-      table: { type: { summary: '(address: AddressDetails) => void' } },
+        'Called when the user selects an address or clears the field. Receives the Address or null.',
+      table: { type: { summary: '(address: Address | null) => void' } },
+    },
+    region: {
+      description:
+        'When set, the displayed address after selection is formatted for this region (e.g. AU for Australian state codes).',
+      control: { type: 'select' },
+      options: [undefined, 'AU'],
+      table: { type: { summary: 'AddressRegion' } },
     },
     debounce: {
       description:
@@ -244,7 +249,7 @@ export const WithMockAdapter: Story = {
     label: 'Shipping address',
     placeholder: 'Start typing an address…',
     debounce: 300,
-    onAddressSelect: (address) => console.log('Selected address:', address),
+    onChange: (address) => console.log('onChange:', address),
   },
 };
 
@@ -269,6 +274,60 @@ export const WithError: Story = {
 };
 
 /**
+ * Select a suggestion to see the canonical Address formatted as single-line and envelope.
+ */
+function FormattedAddressStory() {
+  const [address, setAddress] = useState<Address | null>(null);
+  const singleLine = address ? addressToString(address) : null;
+  const envelope = address
+    ? addressToEnvelopeString(address, { uppercase: false })
+    : null;
+  return (
+    <Stack gap="md">
+      <AddressAutocomplete
+        adapter={mockAdapter}
+        label="Address"
+        placeholder="Select an address…"
+        value={address}
+        onChange={setAddress}
+      />
+      {singleLine != null && (
+        <Stack gap="xs">
+          <Text size="sm" fw={500}>
+            Single line (addressToString):
+          </Text>
+          <Code block>{singleLine}</Code>
+          <Text size="sm" fw={500}>
+            Envelope (addressToEnvelopeString):
+          </Text>
+          <Code block>{envelope ?? ''}</Code>
+        </Stack>
+      )}
+    </Stack>
+  );
+}
+
+export const WithFormattedAddressDisplay: Story = {
+  name: 'With Formatted Address Display',
+  render: () => <FormattedAddressStory />,
+};
+
+/**
+ * With region="AU", the displayed address after selection uses Australian
+ * formatting (e.g. state as code: VIC instead of Victoria).
+ */
+export const WithAustralianRegion: Story = {
+  name: 'With Australian region',
+  args: {
+    adapter: mockAdapter,
+    label: 'Address (AU formatted)',
+    placeholder: 'Select an address…',
+    region: 'AU',
+    onChange: (address) => console.log('onChange:', address),
+  },
+};
+
+/**
  * Paste your Google Maps API key into the **apiKey** control below to test live address
  * autocomplete backed by the Google Places API.
  *
@@ -283,17 +342,10 @@ export const LoadingState: Story = {
   args: {
     adapter: {
       getSuggestions: async () => new Promise<AddressSuggestion[]>(() => {}),
-      getDetails: async () => ({
-        streetAddress: undefined,
-        city: undefined,
-        state: undefined,
-        postalCode: undefined,
-        country: undefined,
-      }),
+      getDetails: async () => ({}),
     } satisfies AddressLookupAdapter,
     label: 'Address',
-    placeholder: 'Loading spinner always visible…',
-    defaultValue: '123 Main',
+    placeholder: 'Type to see loading spinner…',
     debounce: 0,
   },
 };
@@ -330,17 +382,18 @@ export const WithHighlightedMatches: Story = {
         return HIGHLIGHTED_SUGGESTIONS;
       },
       getDetails: async () => ({
-        streetAddress: '123 Main St',
-        city: 'Springfield',
+        street_number: '123',
+        street_name: 'Main St',
+        suburb: 'Springfield',
         state: 'IL',
-        postalCode: '62701',
+        postcode: '62701',
         country: 'US',
       }),
     } satisfies AddressLookupAdapter,
     label: 'Address',
     placeholder: 'Type "123 Main" to see highlighted matches…',
     debounce: 300,
-    onAddressSelect: (address) => console.log('Selected:', address),
+    onChange: (address) => address != null && console.log('Selected:', address),
   },
 };
 
@@ -357,13 +410,7 @@ export const NoResults: Story = {
         await new Promise((r) => setTimeout(r, 200));
         return [];
       },
-      getDetails: async () => ({
-        streetAddress: undefined,
-        city: undefined,
-        state: undefined,
-        postalCode: undefined,
-        country: undefined,
-      }),
+      getDetails: async () => ({}),
     } satisfies AddressLookupAdapter,
     label: 'Address',
     placeholder: 'Type anything — no results will be returned…',
