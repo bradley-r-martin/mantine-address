@@ -60,5 +60,9 @@
     "address",
     "input"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bradley-r-martin/mantine-address"
+  }
 }
