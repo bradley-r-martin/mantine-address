@@ -1,7 +1,14 @@
 /// <reference types="vite/client" />
 import { useState, useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { MantineProvider, Button, Text, Stack, Code } from '@mantine/core';
+import {
+  MantineProvider,
+  Button,
+  Text,
+  Stack,
+  Code,
+  createTheme,
+} from '@mantine/core';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
 import { addressToString, addressToEnvelopeString } from './formatAddress';
@@ -333,6 +340,46 @@ export const WithAustralianRegion: Story = {
  *
  * If `STORYBOOK_GOOGLE_MAPS_API_KEY` was set at build time the field is pre-filled.
  */
+/**
+ * Default props and theming via `MantineProvider` and `createTheme`.
+ * The theme sets default `nothingFoundMessage` and `label` for `AddressAutocomplete`.
+ * Type a query that returns no results to see the themed "No addresses" message.
+ */
+export const WithThemeDefaultProps: Story = {
+  name: 'With theme defaultProps',
+  decorators: [
+    (Story) => {
+      const theme = createTheme({
+        components: {
+          AddressAutocomplete: AddressAutocomplete.extend({
+            defaultProps: {
+              nothingFoundMessage: 'No addresses found',
+              label: 'Address (themed)',
+              placeholder: 'Type to see theme defaults…',
+            },
+          }),
+        },
+      });
+      return (
+        <MantineProvider theme={theme}>
+          <Story />
+        </MantineProvider>
+      );
+    },
+  ],
+  args: {
+    adapter: mockAdapter,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Theme sets `nothingFoundMessage`, `label`, and `placeholder`. Type a query with no matches (e.g. "zzz") to see the themed no-results message.',
+      },
+    },
+  },
+};
+
 /**
  * The mock adapter's `getSuggestions` never resolves, so the loading
  * indicator stays visible indefinitely. Useful for inspecting the spinner UI.

@@ -2,9 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Autocomplete,
   Loader,
+  factory,
+  useProps,
   type AutocompleteProps,
   type ComboboxItem,
 } from '@mantine/core';
+import type { Factory } from '@mantine/core';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
 import { addressToString, formatAddressForRegion } from './formatAddress';
 import type { AddressRegion } from './formatAddress';
@@ -49,6 +52,16 @@ export interface AddressAutocompleteProps extends Omit<
   nothingFoundMessage?: React.ReactNode;
 }
 
+export type AddressAutocompleteFactory = Factory<{
+  props: AddressAutocompleteProps;
+  ref: HTMLInputElement;
+}>;
+
+const defaultProps = {
+  debounce: 300,
+  nothingFoundMessage: 'No results found',
+} satisfies Partial<AddressAutocompleteProps>;
+
 function highlightLabel(
   label: string,
   matchedSubstrings: AddressSuggestion['matchedSubstrings']
@@ -77,128 +90,136 @@ function highlightLabel(
   return <span>{parts}</span>;
 }
 
-export function AddressAutocomplete({
-  adapter,
-  region,
-  debounce: debounceMs = 300,
-  value: valueProp,
-  defaultValue,
-  onChange,
-  rightSection,
-  nothingFoundMessage = 'No results found',
-  ...props
-}: AddressAutocompleteProps) {
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [typedInput, setTypedInput] = useState('');
-  const [uncontrolledAddress, setUncontrolledAddress] =
-    useState<Address | null>(() => defaultValue ?? null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestIdRef = useRef(0);
+export const AddressAutocomplete = factory<AddressAutocompleteFactory>(
+  (_props, ref) => {
+    const props = useProps('AddressAutocomplete', defaultProps, _props);
+    const {
+      adapter,
+      region,
+      debounce: debounceMs,
+      value: valueProp,
+      defaultValue,
+      onChange,
+      rightSection,
+      nothingFoundMessage,
+      ...rest
+    } = props;
 
-  const isControlled = valueProp !== undefined;
-  const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
+    const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [typedInput, setTypedInput] = useState('');
+    const [uncontrolledAddress, setUncontrolledAddress] =
+      useState<Address | null>(() => defaultValue ?? null);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const requestIdRef = useRef(0);
 
-  const displayValue =
-    address != null ? formatDisplayAddress(address, region) : typedInput;
+    const isControlled = valueProp !== undefined;
+    const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
 
-  useEffect(() => {
-    if (isControlled && valueProp == null) setTypedInput('');
-  }, [isControlled, valueProp]);
+    const displayValue =
+      address != null ? formatDisplayAddress(address, region) : typedInput;
 
-  const showNoResults =
-    !isLoading && typedInput.length > 0 && suggestions.length === 0;
+    useEffect(() => {
+      if (isControlled && valueProp == null) setTypedInput('');
+    }, [isControlled, valueProp]);
 
-  const handleChange = (value: string) => {
-    setTypedInput(value);
-    if (!isControlled) setUncontrolledAddress(null);
-    onChange?.(null);
+    const showNoResults =
+      !isLoading && typedInput.length > 0 && suggestions.length === 0;
 
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+    const handleChange = (value: string) => {
+      setTypedInput(value);
+      if (!isControlled) setUncontrolledAddress(null);
+      onChange?.(null);
 
-    if (!value) {
-      requestIdRef.current++;
-      setIsLoading(false);
-      setSuggestions([]);
-      return;
-    }
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
 
-    timerRef.current = setTimeout(() => {
-      const currentId = ++requestIdRef.current;
-      setIsLoading(true);
+      if (!value) {
+        requestIdRef.current++;
+        setIsLoading(false);
+        setSuggestions([]);
+        return;
+      }
+
+      timerRef.current = setTimeout(() => {
+        const currentId = ++requestIdRef.current;
+        setIsLoading(true);
+
+        adapter
+          .getSuggestions(value)
+          .then((results) => {
+            if (requestIdRef.current !== currentId) return;
+            setSuggestions(results);
+            setIsLoading(false);
+          })
+          .catch(() => {
+            if (requestIdRef.current !== currentId) return;
+            setSuggestions([]);
+            setIsLoading(false);
+          });
+      }, debounceMs);
+    };
+
+    const handleOptionSubmit = (label: string) => {
+      if (label === NO_RESULTS_VALUE) return;
+
+      const suggestion = suggestions.find((s) => s.label === label);
+      if (!suggestion) return;
 
       adapter
-        .getSuggestions(value)
-        .then((results) => {
-          if (requestIdRef.current !== currentId) return;
-          setSuggestions(results);
-          setIsLoading(false);
+        .getDetails(suggestion.id)
+        .then((address) => {
+          const formatted = formatDisplayAddress(address, region);
+          setTypedInput(formatted);
+          if (!isControlled) setUncontrolledAddress(address);
+          onChange?.(address);
         })
-        .catch(() => {
-          if (requestIdRef.current !== currentId) return;
-          setSuggestions([]);
-          setIsLoading(false);
-        });
-    }, debounceMs);
-  };
+        .catch(() => {});
+    };
 
-  const handleOptionSubmit = (label: string) => {
-    if (label === NO_RESULTS_VALUE) return;
+    // When no results, add a disabled sentinel item so the dropdown stays open and shows the message.
+    const data: (string | ComboboxItem)[] = showNoResults
+      ? [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
+      : suggestions.map((s) => s.label);
 
-    const suggestion = suggestions.find((s) => s.label === label);
-    if (!suggestion) return;
-
-    adapter
-      .getDetails(suggestion.id)
-      .then((address) => {
-        const formatted = formatDisplayAddress(address, region);
-        setTypedInput(formatted);
-        if (!isControlled) setUncontrolledAddress(address);
-        onChange?.(address);
-      })
-      .catch(() => {});
-  };
-
-  // When no results, add a disabled sentinel item so the dropdown stays open and shows the message.
-  const data: (string | ComboboxItem)[] = showNoResults
-    ? [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
-    : suggestions.map((s) => s.label);
-
-  return (
-    <Autocomplete
-      data={data}
-      value={displayValue}
-      onChange={handleChange}
-      onOptionSubmit={handleOptionSubmit}
-      rightSection={
-        rightSection ??
-        (isLoading ? (
-          <span role="status" aria-label="Loading suggestions">
-            <Loader size="xs" />
-          </span>
-        ) : undefined)
-      }
-      renderOption={({ option }) => {
-        if (option.value === NO_RESULTS_VALUE) {
-          return (
-            <span
-              style={{
-                color: 'var(--mantine-color-dimmed)',
-                cursor: 'default',
-              }}
-            >
-              {nothingFoundMessage}
+    return (
+      <Autocomplete
+        ref={ref}
+        data={data}
+        value={displayValue}
+        onChange={handleChange}
+        onOptionSubmit={handleOptionSubmit}
+        rightSection={
+          rightSection ??
+          (isLoading ? (
+            <span role="status" aria-label="Loading suggestions">
+              <Loader size="xs" />
             </span>
-          );
+          ) : undefined)
         }
-        const suggestion = suggestions.find((s) => s.label === option.value);
-        return highlightLabel(option.value, suggestion?.matchedSubstrings);
-      }}
-      filter={({ options }) => options}
-      {...props}
-    />
-  );
-}
+        renderOption={({ option }) => {
+          if (option.value === NO_RESULTS_VALUE) {
+            return (
+              <span
+                style={{
+                  color: 'var(--mantine-color-dimmed)',
+                  cursor: 'default',
+                }}
+              >
+                {nothingFoundMessage}
+              </span>
+            );
+          }
+          const suggestion = suggestions.find((s) => s.label === option.value);
+          return highlightLabel(option.value, suggestion?.matchedSubstrings);
+        }}
+        filter={({ options }) => options}
+        {...rest}
+      />
+    );
+  }
+);
+
+AddressAutocomplete.displayName = 'AddressAutocomplete';
