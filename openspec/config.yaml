@@ -1,0 +1,25 @@
+schema: spec-driven
+
+# Project context — shown to AI when creating artifacts.
+context: |
+  This is a TypeScript library: a Mantine plugin that provides a reusable component for Mantine-based apps.
+  Tech stack: TypeScript, React, Mantine (Mantine UI). The package is consumed by other projects using Mantine (npm install / workspace dependency).
+  Deliverables: library code (component + types), tests (e.g. Vitest + React Testing Library), and Storybook for development and documentation.
+  Conventions: follow Mantine’s patterns (props, theming, polymorphic components where applicable). Export a single primary component and any related types/utilities. Support tree-shaking and TypeScript strict mode.
+  Commits: Conventional Commits are required and must be enforced (see rules.commits).
+
+# Per-artifact rules for this tech stack.
+rules:
+  commits:
+    - "Format: <type>[optional scope]: <description>. Required. Example: feat(AddressInput): add clear button"
+    - "Allowed types only: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert"
+    - "Scope is optional but preferred for this repo (e.g. feat(AddressInput), fix(deps))"
+    - "Subject line: imperative mood, lowercase after type, no period at end, max ~72 chars"
+    - "Body/footer optional; when present use body for why/what, footer for BREAKING CHANGE or refs"
+    - "Enforce: reject commits that do not match this format"
+  proposal:
+    - Call out public API surface (props, exports) and compatibility with Mantine versions
+    - Include a "Non-goals" section; mention testing and Storybook scope
+  tasks:
+    - Each feature or fix task should include or reference tests and Storybook stories where relevant
+    - Prefer small, reviewable chunks (e.g. max ~2 hours per task)
