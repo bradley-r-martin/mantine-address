@@ -2,7 +2,7 @@
 
 ### Requirement: PRs run tests
 
-The CI system SHALL run the project’s test suite on every pull request (or push to PR branches) and SHALL fail the workflow if tests fail.
+The CI system SHALL run the project's test suite on every pull request (or push to PR branches) and SHALL fail the workflow if tests fail.
 
 #### Scenario: Tests run on PR
 
@@ -20,7 +20,7 @@ The CI system SHALL run a formatting check on every pull request and SHALL fail 
 
 ### Requirement: PRs check linting
 
-The CI system SHALL run the project’s linter on every pull request and SHALL fail the workflow if lint errors are reported.
+The CI system SHALL run the project's linter on every pull request and SHALL fail the workflow if lint errors are reported.
 
 #### Scenario: Lint check on PR
 
@@ -34,30 +34,54 @@ The CI system SHALL validate commit messages on pull requests (e.g. Conventional
 #### Scenario: Commit message check on PR
 
 - **WHEN** a pull request is opened or updated
-- **THEN** a job validates commit messages (e.g. commitlint) and the workflow fails if any commit message does not conform to the project’s commit format
+- **THEN** a job validates commit messages (e.g. commitlint) and the workflow fails if any commit message does not conform to the project's commit format
 
 ### Requirement: PRs build and check build success
 
-The CI system SHALL run the project’s build on every pull request and SHALL fail the workflow if the build fails.
+The CI system SHALL run the project's build on every pull request and SHALL fail the workflow if the build fails.
 
 #### Scenario: Build on PR
 
 - **WHEN** a pull request is opened or updated
 - **THEN** a build job runs (e.g. `npm run build` or equivalent) and the workflow fails if the build fails
 
-### Requirement: PR branch name must match an OpenSpec change
+### Requirement: PR branch name must match an OpenSpec change or be a valid archive branch
 
-The CI system SHALL verify that the pull request’s head branch name matches the name of a directory under `openspec/changes/` (e.g. branch `setup-library` must correspond to `openspec/changes/setup-library/`). The workflow SHALL fail if the branch name is not the name of an existing OpenSpec change.
+The CI system SHALL verify that the pull request's head branch name either (a) matches the name of a directory directly under `openspec/changes/` (e.g. branch `setup-library` must correspond to `openspec/changes/setup-library/`), or (b) ends with `-archive` and the derived change name matches an entry under `openspec/changes/archive/` (e.g. branch `setup-library-archive` is valid when a directory matching `setup-library` exists under `openspec/changes/archive/`). The workflow SHALL fail if the branch name satisfies neither condition.
 
-#### Scenario: Branch name check on PR
+#### Scenario: Branch name check on PR — active change
 
-- **WHEN** a pull request is opened or updated
+- **WHEN** a pull request is opened or updated and the head branch does NOT end with `-archive`
 - **THEN** a job checks that the head branch name equals a directory name under `openspec/changes/` (e.g. branch `setup-library` and `openspec/changes/setup-library/` exists), and the workflow fails otherwise
 
-#### Scenario: Valid branch name passes
+#### Scenario: Valid active branch name passes
 
 - **WHEN** the head branch is named `setup-library` and `openspec/changes/setup-library/` exists
 - **THEN** the branch-name check passes
+
+#### Scenario: Branch name check on PR — archive branch
+
+- **WHEN** a pull request is opened or updated and the head branch ends with `-archive` (e.g. `setup-library-archive`)
+- **THEN** a job strips the `-archive` suffix, checks that the derived name (`setup-library`) corresponds to an entry under `openspec/changes/archive/`, and the workflow fails if no such archived entry exists
+
+#### Scenario: Valid archive branch name passes
+
+- **WHEN** the head branch is named `setup-library-archive` and an entry matching `setup-library` exists under `openspec/changes/archive/` (e.g. `openspec/changes/archive/2026-03-13-setup-library/`)
+- **THEN** the branch-name check passes
+
+### Requirement: Archive branch PRs must only contain OpenSpec file changes
+
+When a pull request's head branch ends with `-archive`, the CI system SHALL verify that the pull request diff contains only files under `openspec/`. The workflow SHALL fail if any changed file is outside the `openspec/` directory.
+
+#### Scenario: Non-OpenSpec file changed on archive branch PR is rejected
+
+- **WHEN** a pull request with a branch name ending in `-archive` is opened or updated and the diff includes a file outside `openspec/` (e.g. `src/index.ts` or `package.json`)
+- **THEN** a CI job detects the violation and fails the workflow
+
+#### Scenario: OpenSpec-only PR on archive branch passes file check
+
+- **WHEN** a pull request with a branch name ending in `-archive` is opened or updated and all changed files are under `openspec/`
+- **THEN** the archive file-scope check passes
 
 ### Requirement: PRs must not change package.json version
 
@@ -66,7 +90,7 @@ The CI system SHALL run on pull requests that target the integration branch (e.g
 #### Scenario: Version unchanged check on PR
 
 - **WHEN** a pull request is opened or updated and it modifies `package.json`
-- **THEN** the workflow fails if the `version` field was changed (or the project’s stated policy is that such changes are not allowed and are caught in review)
+- **THEN** the workflow fails if the `version` field was changed (or the project's stated policy is that such changes are not allowed and are caught in review)
 
 ### Requirement: PRs must include OpenSpec usage
 

@@ -5,18 +5,18 @@ Mantine plugin providing a reusable address input component for [Mantine](https:
 ## Install
 
 ```bash
-npm install mantine-address-input @mantine/core react
+npm install mantine-address @mantine/core react
 ```
 
 ## Usage
 
 ```tsx
-import { AddressInput } from 'mantine-address-input';
+import { AddressInput } from 'mantine-address';
 
 <AddressInput label="Shipping address" placeholder="Enter address..." />;
 ```
 
-See [Storybook](https://your-org.github.io/mantine-address-input/) for more examples (published on releases).
+See [Storybook](https://bradley-r-martin.github.io/mantine-address/) for more examples (published on releases).
 
 ## Development
 
