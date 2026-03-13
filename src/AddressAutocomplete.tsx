@@ -1,27 +1,45 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Autocomplete,
   Loader,
   type AutocompleteProps,
   type ComboboxItem,
 } from '@mantine/core';
-import type {
-  AddressDetails,
-  AddressLookupAdapter,
-  AddressSuggestion,
-} from './types';
+import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
+import { addressToString, formatAddressForRegion } from './formatAddress';
+import type { AddressRegion } from './formatAddress';
 
 /** Sentinel value used to render the "no results" row inside the dropdown. */
 const NO_RESULTS_VALUE = '__mantine-address-no-results__';
 
+function formatDisplayAddress(
+  address: Address,
+  region?: AddressRegion
+): string {
+  return region != null
+    ? formatAddressForRegion(address, region)
+    : addressToString(address);
+}
+
 export interface AddressAutocompleteProps extends Omit<
   AutocompleteProps,
-  'data' | 'onOptionSubmit'
+  'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
 > {
   /** Lookup adapter that provides address suggestions and details. */
   adapter: AddressLookupAdapter;
-  /** Called with structured address data when the user selects a suggestion. */
-  onAddressSelect?: (address: AddressDetails) => void;
+  /**
+   * The selected address (controlled). When undefined, component is uncontrolled and uses defaultValue.
+   */
+  value?: Address | null;
+  /** Initial address when uncontrolled. */
+  defaultValue?: Address | null;
+  /** Called when the user selects an address or clears the field. */
+  onChange?: (address: Address | null) => void;
+  /**
+   * When set, the displayed address (when value is set) is formatted for this region
+   * (e.g. 'AU' for Australian state codes and conventions).
+   */
+  region?: AddressRegion;
   /** Debounce delay in milliseconds before fetching suggestions. Defaults to 300. */
   debounce?: number;
   /**
@@ -61,8 +79,10 @@ function highlightLabel(
 
 export function AddressAutocomplete({
   adapter,
-  onAddressSelect,
+  region,
   debounce: debounceMs = 300,
+  value: valueProp,
+  defaultValue,
   onChange,
   rightSection,
   nothingFoundMessage = 'No results found',
@@ -70,16 +90,29 @@ export function AddressAutocomplete({
 }: AddressAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [typedInput, setTypedInput] = useState('');
+  const [uncontrolledAddress, setUncontrolledAddress] =
+    useState<Address | null>(() => defaultValue ?? null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
 
+  const isControlled = valueProp !== undefined;
+  const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
+
+  const displayValue =
+    address != null ? formatDisplayAddress(address, region) : typedInput;
+
+  useEffect(() => {
+    if (isControlled && valueProp == null) setTypedInput('');
+  }, [isControlled, valueProp]);
+
   const showNoResults =
-    !isLoading && inputValue.length > 0 && suggestions.length === 0;
+    !isLoading && typedInput.length > 0 && suggestions.length === 0;
 
   const handleChange = (value: string) => {
-    setInputValue(value);
-    onChange?.(value);
+    setTypedInput(value);
+    if (!isControlled) setUncontrolledAddress(null);
+    onChange?.(null);
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -120,7 +153,12 @@ export function AddressAutocomplete({
 
     adapter
       .getDetails(suggestion.id)
-      .then((details) => onAddressSelect?.(details))
+      .then((address) => {
+        const formatted = formatDisplayAddress(address, region);
+        setTypedInput(formatted);
+        if (!isControlled) setUncontrolledAddress(address);
+        onChange?.(address);
+      })
       .catch(() => {});
   };
 
@@ -132,6 +170,7 @@ export function AddressAutocomplete({
   return (
     <Autocomplete
       data={data}
+      value={displayValue}
       onChange={handleChange}
       onOptionSubmit={handleOptionSubmit}
       rightSection={

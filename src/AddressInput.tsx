@@ -1,21 +1,20 @@
+import { TextInput } from '@mantine/core';
 import type { ComponentPropsWithoutRef } from 'react';
 
-export interface AddressInputProps extends ComponentPropsWithoutRef<'input'> {
-  /** Label for the address field */
+export type AddressInputProps = ComponentPropsWithoutRef<typeof TextInput> & {
+  /** Label for the address field. Defaults to "Address". */
   label?: string;
-}
+};
 
 /**
- * Address input component for Mantine. Placeholder until full implementation.
+ * Address input component. Wraps Mantine TextInput for consistency with
+ * other Mantine inputs: supports value, onChange, defaultValue, label,
+ * placeholder, error, description, and all standard TextInput props.
  */
 export function AddressInput({
   label = 'Address',
+  placeholder = 'Enter address...',
   ...props
 }: AddressInputProps) {
-  return (
-    <label>
-      {label}
-      <input type="text" placeholder="Enter address..." {...props} />
-    </label>
-  );
+  return <TextInput label={label} placeholder={placeholder} {...props} />;
 }
