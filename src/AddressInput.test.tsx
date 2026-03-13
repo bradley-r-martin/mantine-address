@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { AddressInput } from './AddressInput';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
+import { australian, type AddressFormatAdapter } from './formatters';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },
@@ -461,6 +462,44 @@ describe('AddressInput', () => {
       });
 
       expect(adapter.getSuggestions).toHaveBeenCalled();
+    });
+  });
+
+  describe('format', () => {
+    it('displays address using international formatter when format is omitted', () => {
+      renderComponent({
+        adapter: createMockAdapter(),
+        value: mockAddress,
+      });
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('123 Main St, Springfield IL 62701 US');
+    });
+
+    it('displays address using custom formatter when format prop is provided', () => {
+      const customFormat: AddressFormatAdapter = {
+        toString: (addr) => `Custom: ${addr.street_number} ${addr.street_name}`,
+        toEnvelope: () => '',
+      };
+      renderComponent({
+        adapter: createMockAdapter(),
+        value: mockAddress,
+        format: customFormat,
+      });
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('Custom: 123 Main St');
+    });
+
+    it('displays address using Australian formatter when format is australian', () => {
+      renderComponent({
+        adapter: createMockAdapter(),
+        value: mockAddress,
+        format: australian,
+      });
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('123 Main St, Springfield IL 62701, US');
     });
   });
 

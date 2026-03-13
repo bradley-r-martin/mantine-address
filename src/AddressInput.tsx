@@ -9,8 +9,7 @@ import {
 } from '@mantine/core';
 import type { Factory } from '@mantine/core';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
-import { addressToString, formatAddressForRegion } from './formatAddress';
-import type { AddressRegion } from './formatAddress';
+import { international, type AddressFormatAdapter } from './formatters';
 
 /** Keys of Address that are serialized as hidden form inputs, in stable order. */
 const ADDRESS_FORM_KEYS: (keyof Address)[] = [
@@ -38,15 +37,6 @@ const NO_RESULTS_VALUE = '__mantine-address-no-results__';
 const ADAPTER_REQUIRED_MESSAGE =
   'Address autocomplete requires an adapter to be configured';
 
-function formatDisplayAddress(
-  address: Address,
-  region?: AddressRegion
-): string {
-  return region != null
-    ? formatAddressForRegion(address, region)
-    : addressToString(address);
-}
-
 export interface AddressInputProps extends Omit<
   AutocompleteProps,
   'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
@@ -62,10 +52,11 @@ export interface AddressInputProps extends Omit<
   /** Called when the user selects an address or clears the field. */
   onChange?: (address: Address | null) => void;
   /**
-   * When set, the displayed address (when value is set) is formatted for this region
-   * (e.g. 'AU' for Australian state codes and conventions).
+   * Optional formatter for how the selected address is displayed. The component calls
+   * formatter.toString(address). When omitted, the international formatter is used. E.g. format={australian}.
+   * Display-only: does not restrict which addresses can be selected.
    */
-  region?: AddressRegion;
+  format?: AddressFormatAdapter;
   /**
    * Name for native form participation. When set, hidden inputs are rendered for each defined
    * address field under `{name}[field]` (e.g. name="address" → address[suburb], address[postcode]).
@@ -93,6 +84,7 @@ export type AddressInputFactory = Factory<{
 const defaultProps = {
   debounce: 300,
   nothingFoundMessage: 'No results found',
+  format: international,
 } satisfies Partial<AddressInputProps>;
 
 function highlightLabel(
@@ -155,7 +147,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const props = useProps('AddressInput', defaultProps, _props);
   const {
     adapter,
-    region,
+    format: formatProp,
     debounce: debounceMs,
     value: valueProp,
     defaultValue,
@@ -165,6 +157,8 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     nothingFoundMessage,
     ...rest
   } = props;
+
+  const formatAdapter = formatProp ?? international;
 
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -199,7 +193,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
 
   const displayValue =
-    address != null ? formatDisplayAddress(address, region) : typedInput;
+    address != null ? formatAdapter.toString(address) : typedInput;
 
   useEffect(() => {
     if (isControlled && valueProp == null) setTypedInput('');
@@ -253,7 +247,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     adapter
       .getDetails(suggestion.id)
       .then((address) => {
-        const formatted = formatDisplayAddress(address, region);
+        const formatted = formatAdapter.toString(address);
         setTypedInput(formatted);
         if (!isControlled) setUncontrolledAddress(address);
         onChange?.(address);

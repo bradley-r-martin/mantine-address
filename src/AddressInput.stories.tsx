@@ -13,7 +13,7 @@ import {
 } from '@mantine/core';
 import { AddressInput } from './AddressInput';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
-import { addressToString, addressToEnvelopeString } from './formatAddress';
+import { international, australian } from './formatters';
 import { GooglePlacesAdapter } from './adapters/GooglePlacesAdapter';
 
 // Pre-filled at build time if the env var is set; users can override in the Controls panel.
@@ -233,12 +233,10 @@ const meta: Meta<typeof AddressInput> = {
         'Called when the user selects an address or clears the field. Receives the Address or null.',
       table: { type: { summary: '(address: Address | null) => void' } },
     },
-    region: {
+    format: {
       description:
-        'When set, the displayed address after selection is formatted for this region (e.g. AU for Australian state codes).',
-      control: { type: 'select' },
-      options: [undefined, 'AU'],
-      table: { type: { summary: 'AddressRegion' } },
+        'Optional formatter; the component uses formatter.toString(address) for display. When omitted, the international formatter is used. E.g. format={australian}. Display-only; does not restrict which addresses can be selected.',
+      table: { type: { summary: 'AddressFormatAdapter' } },
     },
     debounce: {
       description:
@@ -325,9 +323,9 @@ export const NoAdapterLoaded: Story = {
  */
 function FormattedAddressStory() {
   const [address, setAddress] = useState<Address | null>(null);
-  const singleLine = address ? addressToString(address) : null;
+  const singleLine = address ? international.toString(address) : null;
   const envelope = address
-    ? addressToEnvelopeString(address, { uppercase: false })
+    ? international.toEnvelope(address, { uppercase: false })
     : null;
   return (
     <Stack gap="md">
@@ -341,11 +339,11 @@ function FormattedAddressStory() {
       {singleLine != null && (
         <Stack gap="xs">
           <Text size="sm" fw={500}>
-            Single line (addressToString):
+            Single line (formatter.toString):
           </Text>
           <Code block>{singleLine}</Code>
           <Text size="sm" fw={500}>
-            Envelope (addressToEnvelopeString):
+            Envelope (formatter.toEnvelope):
           </Text>
           <Code block>{envelope ?? ''}</Code>
         </Stack>
@@ -359,18 +357,119 @@ export const WithFormattedAddressDisplay: Story = {
   render: () => <FormattedAddressStory />,
 };
 
+// --------------------------------------------------------------------------
+// Formatters sub-story: international (default), australian, and via MantineProvider
+// --------------------------------------------------------------------------
+
 /**
- * With region="AU", the displayed address after selection uses Australian
- * formatting (e.g. state as code: VIC instead of Victoria).
+ * Compares display formats and shows how to set a default format via the theme
+ * so you don't need to pass `format` on every AddressInput.
  */
-export const WithAustralianRegion: Story = {
-  name: 'With Australian region',
-  args: {
-    adapter: mockAdapter,
-    label: 'Address (AU formatted)',
-    placeholder: 'Select an address…',
-    region: 'AU',
-    onChange: (address) => console.log('onChange:', address),
+function FormattersStory() {
+  const [address, setAddress] = useState<Address | null>(STUB_ADDRESS);
+
+  return (
+    <Stack gap="xl">
+      <Stack gap="xs">
+        <Text size="sm" fw={600} c="dimmed">
+          International (default)
+        </Text>
+        <Text size="xs" c="dimmed">
+          No <Code>format</Code> prop — uses the default international
+          single-line format.
+        </Text>
+        <AddressInput
+          adapter={mockAdapter}
+          label="Address"
+          placeholder="Select an address…"
+          value={address}
+          onChange={setAddress}
+        />
+      </Stack>
+
+      <Stack gap="xs">
+        <Text size="sm" fw={600} c="dimmed">
+          Australian
+        </Text>
+        <Text size="xs" c="dimmed">
+          <Code>format={'{australian}'}</Code> — state as code (e.g. VIC),
+          comma-separated.
+        </Text>
+        <AddressInput
+          adapter={mockAdapter}
+          label="Address"
+          placeholder="Select an address…"
+          value={address}
+          onChange={setAddress}
+          format={australian}
+        />
+      </Stack>
+
+      <Stack gap="xs">
+        <Text size="sm" fw={600} c="dimmed">
+          Format via MantineProvider
+        </Text>
+        <Text size="xs" c="dimmed">
+          Set <Code>format</Code> in the theme so every AddressInput in the tree
+          uses it without passing the prop.
+        </Text>
+        <FormattersViaThemeDemo />
+      </Stack>
+    </Stack>
+  );
+}
+
+/**
+ * Two AddressInputs inside a MantineProvider that sets default format to australian.
+ * Neither input passes format — they inherit from the theme.
+ */
+function FormattersViaThemeDemo() {
+  const theme = createTheme({
+    components: {
+      AddressInput: AddressInput.extend({
+        defaultProps: {
+          format: australian,
+          label: 'Address (theme default: Australian)',
+          placeholder: 'Select an address…',
+        },
+      }),
+    },
+  });
+
+  const [address, setAddress] = useState<Address | null>(STUB_ADDRESS);
+
+  return (
+    <MantineProvider theme={theme}>
+      <Stack gap="md">
+        <AddressInput
+          adapter={mockAdapter}
+          value={address}
+          onChange={setAddress}
+        />
+        <AddressInput
+          adapter={mockAdapter}
+          value={address}
+          onChange={setAddress}
+        />
+        <Text size="xs" c="dimmed">
+          Both inputs use Australian format from the theme; no{' '}
+          <Code>format</Code> prop on either.
+        </Text>
+      </Stack>
+    </MantineProvider>
+  );
+}
+
+export const Formatters: Story = {
+  name: 'Formatters',
+  render: () => <FormattersStory />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "**International (default):** single-line format. **Australian:** state as code (e.g. VIC), comma-separated. **Via MantineProvider:** set `format` in the theme with `createTheme({ components: { AddressInput: AddressInput.extend({ defaultProps: { format: australian } }) } })` so you don't need to pass `format` on each AddressInput.",
+      },
+    },
   },
 };
 
@@ -525,7 +624,7 @@ function ControlledStory() {
       />
       <Stack gap="xs">
         <Text size="sm" c="dimmed">
-          Current value: {address ? addressToString(address) : '—'}
+          Current value: {address ? international.toString(address) : '—'}
         </Text>
         <Button variant="light" size="xs" onClick={() => setAddress(null)}>
           Clear

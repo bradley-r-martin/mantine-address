@@ -15,7 +15,7 @@ npm install mantine-address @mantine/core react
 The library uses a **uniform canonical `Address` type** that is region-agnostic: the same shape everywhere regardless of country or provider. All address fields are optional to accommodate varying adapter completeness.
 
 - **Adapters** must implement `AddressLookupAdapter`: `getSuggestions(input)` and `getDetails(id)` returning `Promise<Address>`. Adapters map provider-specific responses (e.g. Google Places) into the canonical `Address` only; no provider types leak into the app.
-- **Formatting** is provided by `addressToString`, `addressToStreetString`, and `addressToEnvelopeString`, which accept the uniform `Address`. Region-specific display (e.g. Australian abbreviations) is available via optional region transformers that consume the same `Address` and produce region-specific strings or validation.
+- **Formatting** is provided by the **formatter** (`AddressFormatAdapter`). The formatter is responsible for converting an `Address` into text: use `international` or `australian` from the package. Each formatter exposes `toString(address)` (single-line; used by the input for display) and `toEnvelope(address, options?)` (multi-line envelope). How the selected address is **displayed** in the input is controlled by the optional **`format`** prop, e.g. `format={australian}`. When omitted, the international formatter is used. The format is display-only — it does not restrict which addresses can be selected.
 
 ### Address type (canonical)
 
@@ -39,13 +39,14 @@ interface Address {
 }
 ```
 
-### Formatting utilities
+### Formatters (Address → text)
 
-- **`addressToString(address)`** — single-line full address (street, suburb, state, postcode, country).
-- **`addressToStreetString(address)`** — street-level line only (unit, building, level, lot, street number, name, type, suffix).
-- **`addressToEnvelopeString(address, options?)`** — multi-line envelope format; `options.uppercase` for postal style.
+The **formatter** is responsible for converting an `Address` into text. Use `international` or `australian` from the package; each implements `AddressFormatAdapter`. The component uses **`toString()`** for the input display.
 
-All formatters omit undefined/empty fields and use consistent separators. Region-specific formatting (e.g. Australian state codes) can be layered via optional helpers from the Australian address module.
+- **`formatter.toString(address)`** — single-line full address (street, suburb, state, postcode, country). Used by AddressInput for display.
+- **`formatter.toEnvelope(address, options?)`** — multi-line envelope format; `options.uppercase` for postal style.
+
+For **display in the input**, use the `format` prop: pass `format={australian}` for Australian conventions (e.g. state as code), or omit it for the default international formatter. The format only affects how the address is shown, not which addresses can be selected.
 
 ### Migration from AddressDetails
 
@@ -69,7 +70,7 @@ If you previously used `AddressDetails` (flat `streetAddress`, `city`, `state`, 
 
 > **API key security:** Restrict your key to HTTP referrers in the [Google Cloud Console](https://console.cloud.google.com/) to prevent unauthorized use.
 
-**2. Use the component:** `value` is the selected address (or `null`). The input manages its own display (typed text or formatted address when an address is set). Use `region` for region-specific formatting (e.g. Australian state codes).
+**2. Use the component:** `value` is the selected address (or `null`). The input manages its own display (typed text or formatted address when an address is set). Use the optional `format` prop for display convention (e.g. `format={australian}` for Australian formatting).
 
 ```tsx
 import { useState } from 'react';
@@ -161,19 +162,23 @@ Storybook includes **Form / Controlled**, **Form / Uncontrolled**, **Form / With
 
 ### Props
 
-| Prop                               | Type                                 | Default              | Description                                                                                                                              |
-| ---------------------------------- | ------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`). If missing at runtime, the field is disabled and shows an error. |
-| `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                                                                |
-| `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                                                                       |
-| `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                                                             |
-| `region`                           | `AddressRegion`                      | —                    | When set (e.g. `'AU'`), the displayed address (when value is set) is formatted for this region                                           |
-| `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`).                               |
-| `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                                                     |
-| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query                                              |
-| + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                                                       |
+| Prop                               | Type                                 | Default              | Description                                                                                                                                                               |
+| ---------------------------------- | ------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`). If missing at runtime, the field is disabled and shows an error.                                  |
+| `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                                                                                                 |
+| `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                                                                                                        |
+| `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                                                                                              |
+| `format`                           | `AddressFormatAdapter`               | international        | Optional. How the selected address is displayed. E.g. `format={australian}` or `format={international}`. Display-only; does not restrict which addresses can be selected. |
+| `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`).                                                                |
+| `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                                                                                      |
+| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query                                                                               |
+| + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                                                                                        |
 
 The component’s ref type is `AddressInputRef` (extends `HTMLInputElement` with `reset(): void`). Use the ref for focus and to call `reset()` when uncontrolled.
+
+**Migration from `region`:** If you previously used `region="AU"`, use the format prop instead: `format={australian}`. Import `australian` from the package. For default (international) display, omit the `format` prop.
+
+**Built-in formatters:** The package exports `international` and `australian` from the formatters module. Use `format={australian}` for Australian display conventions (state as code, comma-separated). Use `format={international}` explicitly or omit `format` for the default single-line international format.
 
 #### Built-in UX behaviors
 
