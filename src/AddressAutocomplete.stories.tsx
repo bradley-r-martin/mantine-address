@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState, useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { MantineProvider, Button, Text, Stack, Code } from '@mantine/core';
@@ -372,19 +373,18 @@ export const NoResults: Story = {
 
 export const WithGooglePlacesAdapter = {
   name: 'With Google Places Adapter',
-  render: ({
-    apiKey,
-    debounce,
-    label,
-    placeholder,
-  }: GooglePlacesStoryProps) => (
-    <GooglePlacesStory
-      apiKey={apiKey}
-      debounce={debounce}
-      label={label}
-      placeholder={placeholder}
-    />
-  ),
+  render: (args: unknown) => {
+    const { apiKey, debounce, label, placeholder } =
+      args as GooglePlacesStoryProps;
+    return (
+      <GooglePlacesStory
+        apiKey={apiKey}
+        debounce={debounce}
+        label={label}
+        placeholder={placeholder}
+      />
+    );
+  },
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
