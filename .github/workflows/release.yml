@@ -29,9 +29,8 @@ jobs:
           echo "Version: $VERSION"
 
       - name: Merge next into main and set version
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin next main 2>/dev/null || true
@@ -39,11 +38,11 @@ jobs:
           node -e "
             const fs = require('fs');
             const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            p.version = process.env.VERSION;
+            p.version = process.argv[1];
             fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
-          "
+          " "$VERSION"
           git add package.json
-          git diff --staged --quiet || (git commit -m "chore(release): ${{ steps.version.outputs.version }} [skip ci]" && git push origin main)
+          git diff --staged --quiet || (git commit -m "chore(release): $VERSION [skip ci]" && git push origin main)
 
       - name: Setup Node
         uses: actions/setup-node@v4
