@@ -1,6 +1,6 @@
 # mantine-address-input
 
-Mantine plugin providing a reusable address input component for [Mantine](https://mantine.dev) apps, with real-time address autocomplete powered by a pluggable lookup adapter.
+Mantine plugin providing a reusable **AddressInput** component for [Mantine](https://mantine.dev) apps. **AddressInput** supports **autocomplete only**; **using an adapter is required**. Without an adapter the field is disabled and shows an error. Address lookup is powered by a pluggable adapter (e.g. Google Places or your own backend).
 
 ## Install
 
@@ -9,6 +9,8 @@ npm install mantine-address @mantine/core react
 ```
 
 ## Address model and adapter contract
+
+**AddressInput** provides **address autocomplete only** — there is no freeform or manual address entry mode. You **must** configure an `AddressLookupAdapter`; without it, the field renders disabled and shows an error that the adapter must be configured.
 
 The library uses a **uniform canonical `Address` type** that is region-agnostic: the same shape everywhere regardless of country or provider. All address fields are optional to accommodate varying adapter completeness.
 
@@ -51,9 +53,9 @@ If you previously used `AddressDetails` (flat `streetAddress`, `city`, `state`, 
 
 ## Usage
 
-### AddressAutocomplete with Google Places
+### AddressInput with Google Places
 
-`AddressAutocomplete` wraps Mantine's `Autocomplete` and delegates address lookup to an adapter. The built-in `GooglePlacesAdapter` uses the Google Places API and returns the canonical `Address`.
+`AddressInput` wraps Mantine's `Autocomplete` and delegates address lookup to an adapter. **An adapter is required** — the component only supports autocomplete from the adapter's suggestions. Without an adapter the field is disabled and shows an error. The built-in `GooglePlacesAdapter` uses the Google Places API and returns the canonical `Address`.
 
 **1. Load the Google Maps script in your HTML** (before your app bundle):
 
@@ -72,7 +74,7 @@ If you previously used `AddressDetails` (flat `streetAddress`, `city`, `state`, 
 ```tsx
 import { useState } from 'react';
 import type { Address } from 'mantine-address';
-import { AddressAutocomplete, GooglePlacesAdapter } from 'mantine-address';
+import { AddressInput, GooglePlacesAdapter } from 'mantine-address';
 
 const adapter = new GooglePlacesAdapter({ apiKey: 'YOUR_GOOGLE_API_KEY' });
 
@@ -80,7 +82,7 @@ function ShippingForm() {
   const [address, setAddress] = useState<Address | null>(null);
 
   return (
-    <AddressAutocomplete
+    <AddressInput
       adapter={adapter}
       label="Shipping address"
       placeholder="Start typing an address…"
@@ -127,7 +129,7 @@ const myAdapter: AddressLookupAdapter = {
   },
 };
 
-<AddressAutocomplete adapter={myAdapter} label="Address" />;
+<AddressInput adapter={myAdapter} label="Address" />;
 ```
 
 #### `matchedSubstrings` — highlight what the user typed
@@ -142,7 +144,7 @@ interface AddressSuggestion {
 }
 ```
 
-When present, `AddressAutocomplete` renders the matching portions of each suggestion label in **bold** inside the dropdown. Adapters that don't have this data can simply omit the field — the label renders as plain text. The built-in `GooglePlacesAdapter` populates this automatically from the Google Places API response.
+When present, `AddressInput` renders the matching portions of each suggestion label in **bold** inside the dropdown. Adapters that don't have this data can simply omit the field — the label renders as plain text. The built-in `GooglePlacesAdapter` populates this automatically from the Google Places API response.
 
 ### Form support (controlled, uncontrolled, native forms)
 
@@ -159,22 +161,23 @@ Storybook includes **Form / Controlled**, **Form / Uncontrolled**, **Form / With
 
 ### Props
 
-| Prop                               | Type                                 | Default              | Description                                                                                                |
-| ---------------------------------- | ------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`)                                     |
-| `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                                  |
-| `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                                         |
-| `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                               |
-| `region`                           | `AddressRegion`                      | —                    | When set (e.g. `'AU'`), the displayed address (when value is set) is formatted for this region             |
-| `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`). |
-| `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                       |
-| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query                |
-| + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                         |
+| Prop                               | Type                                 | Default              | Description                                                                                                                              |
+| ---------------------------------- | ------------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`). If missing at runtime, the field is disabled and shows an error. |
+| `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                                                                |
+| `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                                                                       |
+| `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                                                             |
+| `region`                           | `AddressRegion`                      | —                    | When set (e.g. `'AU'`), the displayed address (when value is set) is formatted for this region                                           |
+| `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`).                               |
+| `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                                                     |
+| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query                                              |
+| + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                                                       |
 
-The component’s ref type is `AddressAutocompleteRef` (extends `HTMLInputElement` with `reset(): void`). Use the ref for focus and to call `reset()` when uncontrolled.
+The component’s ref type is `AddressInputRef` (extends `HTMLInputElement` with `reset(): void`). Use the ref for focus and to call `reset()` when uncontrolled.
 
 #### Built-in UX behaviors
 
+- **Adapter required** — if the component is rendered without a valid adapter (e.g. `undefined` or `null` at runtime), the input is **disabled** and displays an error message that the adapter must be configured. No lookup or selection occurs.
 - **Loading indicator** — a spinner appears inside the input while `getSuggestions` is in flight. Provide a `rightSection` prop to replace it with your own element.
 - **Match highlighting** — when an `AddressSuggestion` includes `matchedSubstrings`, the matched portion of the label is rendered in bold in the dropdown.
 - **No-results message** — when the adapter returns `[]` for a non-empty query and no request is in flight, `nothingFoundMessage` is shown in the dropdown.

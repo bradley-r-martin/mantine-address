@@ -1,11 +1,5 @@
 export { AddressInput } from './AddressInput';
-export type { AddressInputProps } from './AddressInput';
-
-export { AddressAutocomplete } from './AddressAutocomplete';
-export type {
-  AddressAutocompleteProps,
-  AddressAutocompleteRef,
-} from './AddressAutocomplete';
+export type { AddressInputProps, AddressInputRef } from './AddressInput';
 
 export { GooglePlacesAdapter } from './adapters/GooglePlacesAdapter';
 

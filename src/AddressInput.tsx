@@ -1,34 +1,326 @@
-import { TextInput, factory, useProps } from '@mantine/core';
+import { useState, useRef, useEffect, useImperativeHandle } from 'react';
+import {
+  Autocomplete,
+  Loader,
+  factory,
+  useProps,
+  type AutocompleteProps,
+  type ComboboxItem,
+} from '@mantine/core';
 import type { Factory } from '@mantine/core';
-import type { ComponentPropsWithoutRef } from 'react';
+import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
+import { addressToString, formatAddressForRegion } from './formatAddress';
+import type { AddressRegion } from './formatAddress';
 
-export type AddressInputProps = ComponentPropsWithoutRef<typeof TextInput> & {
-  /** Label for the address field. Defaults to "Address". */
-  label?: string;
-};
+/** Keys of Address that are serialized as hidden form inputs, in stable order. */
+const ADDRESS_FORM_KEYS: (keyof Address)[] = [
+  'place_id',
+  'building_name',
+  'level',
+  'unit',
+  'lot_no',
+  'street_number',
+  'street_name',
+  'street_type',
+  'street_suffix',
+  'suburb',
+  'state',
+  'postcode',
+  'country',
+  'latitude',
+  'longitude',
+];
+
+/** Sentinel value used to render the "no results" row inside the dropdown. */
+const NO_RESULTS_VALUE = '__mantine-address-no-results__';
+
+/** Message shown when the component is rendered without a valid adapter. */
+const ADAPTER_REQUIRED_MESSAGE =
+  'Address autocomplete requires an adapter to be configured';
+
+function formatDisplayAddress(
+  address: Address,
+  region?: AddressRegion
+): string {
+  return region != null
+    ? formatAddressForRegion(address, region)
+    : addressToString(address);
+}
+
+export interface AddressInputProps extends Omit<
+  AutocompleteProps,
+  'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
+> {
+  /** Lookup adapter that provides address suggestions and details. */
+  adapter: AddressLookupAdapter;
+  /**
+   * The selected address (controlled). When undefined, component is uncontrolled and uses defaultValue.
+   */
+  value?: Address | null;
+  /** Initial address when uncontrolled. */
+  defaultValue?: Address | null;
+  /** Called when the user selects an address or clears the field. */
+  onChange?: (address: Address | null) => void;
+  /**
+   * When set, the displayed address (when value is set) is formatted for this region
+   * (e.g. 'AU' for Australian state codes and conventions).
+   */
+  region?: AddressRegion;
+  /**
+   * Name for native form participation. When set, hidden inputs are rendered for each defined
+   * address field under `{name}[field]` (e.g. name="address" → address[suburb], address[postcode]).
+   */
+  name?: string;
+  /** Debounce delay in milliseconds before fetching suggestions. Defaults to 300. */
+  debounce?: number;
+  /**
+   * Message displayed in the dropdown when the adapter returns no suggestions
+   * for a non-empty query. Defaults to `"No results found"`.
+   */
+  nothingFoundMessage?: React.ReactNode;
+}
+
+export interface AddressInputRef extends HTMLInputElement {
+  /** Clears the selected address and typed input. Use after form reset when uncontrolled. */
+  reset(): void;
+}
 
 export type AddressInputFactory = Factory<{
   props: AddressInputProps;
-  ref: HTMLInputElement;
+  ref: AddressInputRef;
 }>;
 
 const defaultProps = {
-  label: 'Address',
-  placeholder: 'Enter address...',
+  debounce: 300,
+  nothingFoundMessage: 'No results found',
 } satisfies Partial<AddressInputProps>;
 
-/**
- * Address input component. Wraps Mantine TextInput for consistency with
- * other Mantine inputs: supports value, onChange, defaultValue, label,
- * placeholder, error, description, and all standard TextInput props.
- * Uses factory and useProps so defaultProps and theme.components.AddressInput
- * can be set on MantineProvider.
- */
+function highlightLabel(
+  label: string,
+  matchedSubstrings: AddressSuggestion['matchedSubstrings']
+): React.ReactNode {
+  if (!matchedSubstrings || matchedSubstrings.length === 0) return label;
+
+  const ranges = [...matchedSubstrings].sort((a, b) => a.offset - b.offset);
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+
+  for (const { offset, length } of ranges) {
+    if (offset > cursor) parts.push(label.slice(cursor, offset));
+    parts.push(
+      <mark
+        key={offset}
+        style={{ fontWeight: 700, background: 'transparent', color: 'inherit' }}
+      >
+        {label.slice(offset, offset + length)}
+      </mark>
+    );
+    cursor = offset + length;
+  }
+
+  if (cursor < label.length) parts.push(label.slice(cursor));
+
+  return <span>{parts}</span>;
+}
+
+function renderHiddenInputs(
+  name: string,
+  address: Address | null
+): React.ReactNode {
+  if (!name || !address) return null;
+  const entries: Array<[keyof Address, string]> = [];
+  for (const key of ADDRESS_FORM_KEYS) {
+    const v = address[key];
+    if (v === undefined || v === null) continue;
+    const value = typeof v === 'number' ? String(v) : v;
+    entries.push([key, value]);
+  }
+  return (
+    <>
+      {entries.map(([field, value]) => (
+        <input
+          key={field}
+          type="hidden"
+          name={`${name}[${field}]`}
+          value={value}
+          readOnly
+          aria-hidden
+        />
+      ))}
+    </>
+  );
+}
+
 export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const props = useProps('AddressInput', defaultProps, _props);
-  const { label, placeholder, ...rest } = props;
+  const {
+    adapter,
+    region,
+    debounce: debounceMs,
+    value: valueProp,
+    defaultValue,
+    onChange,
+    name: nameProp,
+    rightSection,
+    nothingFoundMessage,
+    ...rest
+  } = props;
+
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [typedInput, setTypedInput] = useState('');
+  const [uncontrolledAddress, setUncontrolledAddress] =
+    useState<Address | null>(() => defaultValue ?? null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const reset = () => {
+    setTypedInput('');
+    setUncontrolledAddress(null);
+    setSuggestions([]);
+    setIsLoading(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    requestIdRef.current++;
+    onChange?.(null);
+  };
+
+  useImperativeHandle(ref, () => {
+    const el = inputRef.current;
+    if (!el) return null as unknown as AddressInputRef;
+    (el as AddressInputRef).reset = reset;
+    return el as AddressInputRef;
+  }, [reset]);
+
+  const isControlled = valueProp !== undefined;
+  const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
+
+  const displayValue =
+    address != null ? formatDisplayAddress(address, region) : typedInput;
+
+  useEffect(() => {
+    if (isControlled && valueProp == null) setTypedInput('');
+  }, [isControlled, valueProp]);
+
+  const showNoResults =
+    !isLoading && typedInput.length > 0 && suggestions.length === 0;
+
+  const handleChange = (value: string) => {
+    setTypedInput(value);
+    if (!isControlled) setUncontrolledAddress(null);
+    onChange?.(null);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (!value) {
+      requestIdRef.current++;
+      setIsLoading(false);
+      setSuggestions([]);
+      return;
+    }
+
+    timerRef.current = setTimeout(() => {
+      const currentId = ++requestIdRef.current;
+      setIsLoading(true);
+
+      adapter
+        .getSuggestions(value)
+        .then((results) => {
+          if (requestIdRef.current !== currentId) return;
+          setSuggestions(results);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          if (requestIdRef.current !== currentId) return;
+          setSuggestions([]);
+          setIsLoading(false);
+        });
+    }, debounceMs);
+  };
+
+  const handleOptionSubmit = (label: string) => {
+    if (label === NO_RESULTS_VALUE) return;
+
+    const suggestion = suggestions.find((s) => s.label === label);
+    if (!suggestion) return;
+
+    adapter
+      .getDetails(suggestion.id)
+      .then((address) => {
+        const formatted = formatDisplayAddress(address, region);
+        setTypedInput(formatted);
+        if (!isControlled) setUncontrolledAddress(address);
+        onChange?.(address);
+      })
+      .catch(() => {});
+  };
+
+  // When no results, add a disabled sentinel item so the dropdown stays open and shows the message.
+  const data: (string | ComboboxItem)[] = showNoResults
+    ? [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
+    : suggestions.map((s) => s.label);
+
+  if (adapter == null) {
+    return (
+      <>
+        {nameProp ? renderHiddenInputs(nameProp, address) : null}
+        <Autocomplete
+          ref={inputRef}
+          data={[]}
+          value={displayValue}
+          onChange={() => {}}
+          onOptionSubmit={() => {}}
+          disabled
+          error={ADAPTER_REQUIRED_MESSAGE}
+          {...rest}
+        />
+      </>
+    );
+  }
+
   return (
-    <TextInput ref={ref} label={label} placeholder={placeholder} {...rest} />
+    <>
+      {nameProp ? renderHiddenInputs(nameProp, address) : null}
+      <Autocomplete
+        ref={inputRef}
+        data={data}
+        value={displayValue}
+        onChange={handleChange}
+        onOptionSubmit={handleOptionSubmit}
+        rightSection={
+          rightSection ??
+          (isLoading ? (
+            <span role="status" aria-label="Loading suggestions">
+              <Loader size="xs" />
+            </span>
+          ) : undefined)
+        }
+        renderOption={({ option }) => {
+          if (option.value === NO_RESULTS_VALUE) {
+            return (
+              <span
+                style={{
+                  color: 'var(--mantine-color-dimmed)',
+                  cursor: 'default',
+                }}
+              >
+                {nothingFoundMessage}
+              </span>
+            );
+          }
+          const suggestion = suggestions.find((s) => s.label === option.value);
+          return highlightLabel(option.value, suggestion?.matchedSubstrings);
+        }}
+        filter={({ options }) => options}
+        {...rest}
+      />
+    </>
   );
 });
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import { AddressAutocomplete } from './AddressAutocomplete';
+import { AddressInput } from './AddressInput';
 import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
 
 const mockSuggestions: AddressSuggestion[] = [
@@ -29,18 +29,18 @@ function createMockAdapter(
 }
 
 function renderComponent(
-  props: Partial<React.ComponentProps<typeof AddressAutocomplete>> & {
+  props: Partial<React.ComponentProps<typeof AddressInput>> & {
     adapter: AddressLookupAdapter;
   }
 ) {
   return render(
     <MantineProvider>
-      <AddressAutocomplete {...props} />
+      <AddressInput {...props} />
     </MantineProvider>
   );
 }
 
-describe('AddressAutocomplete', () => {
+describe('AddressInput', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -75,6 +75,76 @@ describe('AddressAutocomplete', () => {
     });
 
     expect(screen.getByText('Address is required')).toBeInTheDocument();
+  });
+
+  describe('missing or invalid adapter', () => {
+    const adapterRequiredMessage =
+      'Address autocomplete requires an adapter to be configured';
+
+    it('renders disabled with error when adapter is undefined', () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ adapter: undefined } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      const input = screen.getByRole('textbox');
+      expect(input).toBeDisabled();
+      expect(screen.getByText(adapterRequiredMessage)).toBeInTheDocument();
+    });
+
+    it('renders disabled with error when adapter is null', () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ adapter: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      const input = screen.getByRole('textbox');
+      expect(input).toBeDisabled();
+      expect(screen.getByText(adapterRequiredMessage)).toBeInTheDocument();
+    });
+
+    it('stays disabled with error after typing and debounce (no lookup runs)', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ adapter: undefined } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: '123 Main' } });
+      await act(async () => {
+        vi.advanceTimersByTime(400);
+      });
+
+      expect(input).toBeDisabled();
+      expect(screen.getByText(adapterRequiredMessage)).toBeInTheDocument();
+    });
+  });
+
+  it('with valid adapter renders enabled and without adapter-required error', () => {
+    renderComponent({ adapter: createMockAdapter() });
+
+    const input = screen.getByRole('textbox');
+    expect(input).not.toBeDisabled();
+    expect(
+      screen.queryByText(
+        'Address autocomplete requires an adapter to be configured'
+      )
+    ).not.toBeInTheDocument();
   });
 
   describe('getSuggestions debounce', () => {
@@ -408,11 +478,7 @@ describe('AddressAutocomplete', () => {
 
       rerender(
         <MantineProvider>
-          <AddressAutocomplete
-            adapter={adapter}
-            value={null}
-            onChange={() => {}}
-          />
+          <AddressInput adapter={adapter} value={null} onChange={() => {}} />
         </MantineProvider>
       );
 
@@ -499,7 +565,7 @@ describe('AddressAutocomplete', () => {
     it('ref.reset() clears uncontrolled address and typed input', async () => {
       const adapter = createMockAdapter();
       const ref = {
-        current: null as React.ComponentRef<typeof AddressAutocomplete> | null,
+        current: null as React.ComponentRef<typeof AddressInput> | null,
       };
       renderComponent({
         adapter,
