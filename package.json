@@ -1,5 +1,5 @@
 {
-  "name": "mantine-address-input",
+  "name": "mantine-address",
   "version": "0.0.0",
   "description": "Mantine plugin providing a reusable address input component",
   "type": "module",
