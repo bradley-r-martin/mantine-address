@@ -1,3 +1,7 @@
+# IMPORTANT: This workflow is loaded from the COMMIT THE RELEASE TAG POINTS TO (not the default branch).
+# So when you "Publish release" for tag v1.0.0, GitHub runs THIS file from whatever commit v1.0.0 points to.
+# If that tag was created earlier, you get an old version of this file. Fix: create a NEW tag from current
+# "next" (e.g. v1.0.1 or recreate v1.0.0 from next), then create/publish the release for that new tag.
 name: Release
 
 on:
