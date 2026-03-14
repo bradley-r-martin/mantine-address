@@ -1,12 +1,12 @@
 ## ADDED Requirements
 
-### Requirement: AddressLookupAdapter interface is defined
+### Requirement: AddressLookupProvider interface is defined
 
-The library SHALL export a TypeScript interface `AddressLookupAdapter` with two required async methods: `getSuggestions` and `getDetails`.
+The library SHALL export a TypeScript interface `AddressLookupProvider` with two required async methods: `getSuggestions` and `getDetails`.
 
 #### Scenario: Interface is importable
 
-- **WHEN** a consumer writes `import type { AddressLookupAdapter } from 'mantine-address-input'`
+- **WHEN** a consumer writes `import type { AddressLookupProvider } from 'mantine-address-input'`
 - **THEN** TypeScript resolves the interface without error
 
 ---
@@ -17,7 +17,7 @@ The library SHALL export a TypeScript interface `AddressLookupAdapter` with two 
 
 #### Scenario: Successful suggestion fetch
 
-- **WHEN** `getSuggestions("100 Broad")` is called on a valid adapter implementation
+- **WHEN** `getSuggestions("100 Broad")` is called on a valid provider implementation
 - **THEN** the returned promise resolves with an array of objects each having `id` and `label` fields
 
 #### Scenario: No matches found
@@ -29,14 +29,14 @@ The library SHALL export a TypeScript interface `AddressLookupAdapter` with two 
 
 ### Requirement: AddressSuggestion supports optional matched substring data
 
-`AddressSuggestion` SHALL include an optional `matchedSubstrings` field of type `Array<{ offset: number; length: number }>`. When present, each entry describes a byte-offset range within `label` that corresponds to a portion matched by the user's input. Adapters that do not have this information SHALL omit the field.
+`AddressSuggestion` SHALL include an optional `matchedSubstrings` field of type `Array<{ offset: number; length: number }>`. When present, each entry describes a byte-offset range within `label` that corresponds to a portion matched by the user's input. Providers that do not have this information SHALL omit the field.
 
-#### Scenario: Adapter supplies matchedSubstrings
+#### Scenario: Provider supplies matchedSubstrings
 
 - **WHEN** a suggestion is returned with `matchedSubstrings: [{ offset: 0, length: 3 }]`
 - **THEN** TypeScript accepts the object as a valid `AddressSuggestion`
 
-#### Scenario: Adapter omits matchedSubstrings
+#### Scenario: Provider omits matchedSubstrings
 
 - **WHEN** a suggestion is returned without a `matchedSubstrings` field
 - **THEN** TypeScript accepts the object as a valid `AddressSuggestion`
@@ -65,16 +65,16 @@ The library SHALL export an `AddressDetails` interface that includes structured 
 
 #### Scenario: AddressDetails shape
 
-- **WHEN** a consumer implements `AddressLookupAdapter` and returns an `AddressDetails` from `getDetails`
+- **WHEN** a consumer implements `AddressLookupProvider` and returns an `AddressDetails` from `getDetails`
 - **THEN** TypeScript enforces the presence of `streetAddress`, `city`, `state`, `postalCode`, and `country` fields
 
 ---
 
-### Requirement: Custom adapters can be implemented by consumers
+### Requirement: Custom providers can be implemented by consumers
 
-Any object satisfying the `AddressLookupAdapter` interface SHALL work with `AddressAutocomplete` regardless of the underlying service.
+Any object satisfying the `AddressLookupProvider` interface SHALL work with the address autocomplete component regardless of the underlying service.
 
-#### Scenario: Mock adapter in tests
+#### Scenario: Mock provider in tests
 
 - **WHEN** a test creates an object with `getSuggestions` and `getDetails` returning controlled data
-- **THEN** the object satisfies `AddressLookupAdapter` and can be passed to `AddressAutocomplete` without TypeScript errors
+- **THEN** the object satisfies `AddressLookupProvider` and can be passed to the address component without TypeScript errors

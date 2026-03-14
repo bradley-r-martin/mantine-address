@@ -1,30 +1,30 @@
 ## ADDED Requirements
 
-### Requirement: GooglePlacesAdapter implements AddressLookupAdapter
+### Requirement: GooglePlacesProvider implements AddressLookupProvider
 
-The library SHALL export a `GooglePlacesAdapter` class that implements the `AddressLookupAdapter` interface using the Google Places Autocomplete and Place Details APIs.
+The library SHALL export a `GooglePlacesProvider` class that implements the `AddressLookupProvider` interface using the Google Places Autocomplete and Place Details APIs.
 
 #### Scenario: Type compatibility
 
-- **WHEN** a consumer assigns `new GooglePlacesAdapter({ apiKey: "..." })` to a variable typed as `AddressLookupAdapter`
+- **WHEN** a consumer assigns `new GooglePlacesProvider({ apiKey: "..." })` to a variable typed as `AddressLookupProvider`
 - **THEN** TypeScript accepts the assignment without error
 
 ---
 
-### Requirement: Adapter is constructed with an API key
+### Requirement: Provider is constructed with an API key
 
-`GooglePlacesAdapter` SHALL accept a required `apiKey` string in its constructor options. The API key MUST be passed to the underlying Google Places API calls.
+`GooglePlacesProvider` SHALL accept a required `apiKey` string in its constructor options. The API key MUST be passed to the underlying Google Places API calls.
 
 #### Scenario: Construction with API key
 
-- **WHEN** `new GooglePlacesAdapter({ apiKey: "MY_KEY" })` is called
+- **WHEN** `new GooglePlacesProvider({ apiKey: "MY_KEY" })` is called
 - **THEN** the instance is created without error
 
 ---
 
 ### Requirement: getSuggestions calls Google Places Autocomplete
 
-`GooglePlacesAdapter.getSuggestions(input)` SHALL call the Google Places Autocomplete API (via `window.google.maps.places.AutocompleteService`) and return an array of `AddressSuggestion` objects mapping Google predictions to `{ id: place_id, label: description }`.
+`GooglePlacesProvider.getSuggestions(input)` SHALL call the Google Places Autocomplete API (via `window.google.maps.places.AutocompleteService`) and return an array of `AddressSuggestion` objects mapping Google predictions to `{ id: place_id, label: description }`.
 
 #### Scenario: Successful autocomplete
 
@@ -40,12 +40,12 @@ The library SHALL export a `GooglePlacesAdapter` class that implements the `Addr
 
 ### Requirement: getDetails calls Google Place Details
 
-`GooglePlacesAdapter.getDetails(id)` SHALL call the Google Place Details API using `window.google.maps.places.PlacesService` and map the result to an `AddressDetails` object with normalized fields.
+`GooglePlacesProvider.getDetails(id)` SHALL call the Google Place Details API using `window.google.maps.places.PlacesService` and map the result to an `AddressDetails`/`Address` object with normalized fields.
 
 #### Scenario: Successful detail fetch
 
 - **WHEN** `getDetails("ChIJN1t_tDeuEmsRUsoyG83frY4")` is called with a valid place id
-- **THEN** the returned `AddressDetails` object contains `streetAddress`, `city`, `state`, `postalCode`, and `country` derived from the Google address components
+- **THEN** the returned address object contains the expected structured fields derived from the Google address components
 
 #### Scenario: Place Details API error
 
@@ -54,11 +54,11 @@ The library SHALL export a `GooglePlacesAdapter` class that implements the `Addr
 
 ---
 
-### Requirement: GooglePlacesAdapter is exported from package root
+### Requirement: GooglePlacesProvider is exported from package root
 
-The `GooglePlacesAdapter` class SHALL be exported from the package's main entry point.
+The `GooglePlacesProvider` class SHALL be exported from the package's main entry point.
 
 #### Scenario: Named import works
 
-- **WHEN** a consumer writes `import { GooglePlacesAdapter } from 'mantine-address-input'`
+- **WHEN** a consumer writes `import { GooglePlacesProvider } from 'mantine-address-input'`
 - **THEN** TypeScript resolves the class without error

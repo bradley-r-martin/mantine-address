@@ -8,7 +8,7 @@ TBD - created by archiving change setup-library. Update Purpose after archive.
 
 ### Requirement: README describes the project and usage
 
-The repository SHALL include a README (e.g. README.md) that describes the project, how to install it, basic usage, and the main development scripts (e.g. format, lint, test, build, Storybook) so that users and developers can onboard quickly. The README SHALL refer to the single address component as **AddressInput** and state that it supports **autocomplete only** and that **using an adapter is required**; it MUST NOT imply that the component can operate without an adapter or that there is a non-autocomplete (e.g. freeform manual entry) mode.
+The repository SHALL include a README (e.g. README.md) that describes the project, how to install it, basic usage, and the main development scripts (e.g. format, lint, test, build, Storybook) so that users and developers can onboard quickly. The README SHALL refer to the single address component as **AddressInput** and state that it supports **autocomplete only** and that **a provider is required**; it MUST NOT imply that the component can operate without a provider or that there is a non-autocomplete (e.g. freeform manual entry) mode.
 
 #### Scenario: README exists and is discoverable
 
@@ -25,11 +25,11 @@ The repository SHALL include a README (e.g. README.md) that describes the projec
 - **WHEN** a developer reads the README
 - **THEN** it documents or references the main scripts (e.g. format, lint, test, build, Storybook) so they know how to run quality checks and build
 
-#### Scenario: README states autocomplete only and adapter required
+#### Scenario: README states autocomplete only and provider required
 
 - **WHEN** a user reads the README
-- **THEN** it explicitly states that the AddressInput component provides autocomplete only and that an adapter must be configured
-- **THEN** it does not imply that the field can work without an adapter or that there is a non-autocomplete input mode
+- **THEN** it explicitly states that the AddressInput component provides autocomplete only and that a provider must be configured
+- **THEN** it does not imply that the field can work without a provider or that there is a non-autocomplete input mode
 
 ### Requirement: .gitignore excludes common library artifacts
 
