@@ -148,11 +148,11 @@ describe('AddressInput', () => {
 
       expect(screen.getByText('Enter address')).toBeInTheDocument();
 
-      const streetInput = screen.getByLabelText('Street');
+      const streetNameInput = screen.getByLabelText('Street name');
       const saveButton = screen.getByRole('button', { name: /save/i });
 
       await act(async () => {
-        fireEvent.change(streetInput, { target: { value: '1 Main St' } });
+        fireEvent.change(streetNameInput, { target: { value: '1 Main St' } });
       });
       await act(async () => {
         fireEvent.click(saveButton);
@@ -229,6 +229,119 @@ describe('AddressInput', () => {
       });
 
       expect(screen.getByText('Enter address')).toBeInTheDocument();
+    });
+
+    it('manual modal form includes all 12 address fields (no place_id, lat, long)', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(screen.getByLabelText('Building name')).toBeInTheDocument();
+      expect(screen.getByLabelText('Level')).toBeInTheDocument();
+      expect(screen.getByLabelText('Unit')).toBeInTheDocument();
+      expect(screen.getByLabelText('Lot no')).toBeInTheDocument();
+      expect(screen.getByLabelText('Street number')).toBeInTheDocument();
+      expect(screen.getByLabelText('Street name')).toBeInTheDocument();
+      expect(screen.getByLabelText('Street type')).toBeInTheDocument();
+      expect(screen.getByLabelText('Street suffix')).toBeInTheDocument();
+      expect(screen.getByLabelText('Suburb')).toBeInTheDocument();
+      expect(screen.getByLabelText('State / Province')).toBeInTheDocument();
+      expect(screen.getByLabelText('Postcode')).toBeInTheDocument();
+      expect(screen.getByLabelText('Country')).toBeInTheDocument();
+      expect(
+        screen.queryByLabelText(/place_id|latitude|longitude/i)
+      ).not.toBeInTheDocument();
+    });
+
+    it('manual submit produces Address with filled fields only (no place_id, latitude, longitude)', async () => {
+      const onChange = vi.fn();
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            onChange={onChange}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('Building name'), {
+          target: { value: 'Tower A' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('Street number'), {
+          target: { value: '100' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('Street name'), {
+          target: { value: 'George St' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('Suburb'), {
+          target: { value: 'Sydney' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('State / Province'), {
+          target: { value: 'NSW' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('Postcode'), {
+          target: { value: '2000' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(screen.getByLabelText('Country'), {
+          target: { value: 'Australia' },
+        });
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /save/i }));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const [address] = onChange.mock.calls[0] as [Address];
+      expect(address).toMatchObject({
+        building_name: 'Tower A',
+        street_number: '100',
+        street_name: 'George St',
+        suburb: 'Sydney',
+        state: 'NSW',
+        postcode: '2000',
+        country: 'Australia',
+      });
+      expect(address).not.toHaveProperty('place_id');
+      expect(address).not.toHaveProperty('latitude');
+      expect(address).not.toHaveProperty('longitude');
     });
 
     it('when preventManualEntry is true and no results, only no-results message is shown (no Enter manually)', async () => {

@@ -4,6 +4,7 @@ import {
   Button,
   Loader,
   Modal,
+  ScrollArea,
   Stack,
   TextInput,
   factory,
@@ -180,7 +181,14 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const [uncontrolledAddress, setUncontrolledAddress] =
     useState<Address | null>(() => defaultValue ?? null);
   const [manualModalOpen, setManualModalOpen] = useState(false);
-  const [manualFormStreet, setManualFormStreet] = useState('');
+  const [manualFormBuildingName, setManualFormBuildingName] = useState('');
+  const [manualFormLevel, setManualFormLevel] = useState('');
+  const [manualFormUnit, setManualFormUnit] = useState('');
+  const [manualFormLotNo, setManualFormLotNo] = useState('');
+  const [manualFormStreetNumber, setManualFormStreetNumber] = useState('');
+  const [manualFormStreetName, setManualFormStreetName] = useState('');
+  const [manualFormStreetType, setManualFormStreetType] = useState('');
+  const [manualFormStreetSuffix, setManualFormStreetSuffix] = useState('');
   const [manualFormSuburb, setManualFormSuburb] = useState('');
   const [manualFormState, setManualFormState] = useState('');
   const [manualFormPostcode, setManualFormPostcode] = useState('');
@@ -192,11 +200,14 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const manualModalJustClosedRef = useRef(false);
 
   const openManualModal = (initialStreet?: string) => {
-    if (initialStreet != null) {
-      setManualFormStreet(initialStreet);
-    } else {
-      setManualFormStreet('');
-    }
+    setManualFormBuildingName('');
+    setManualFormLevel('');
+    setManualFormUnit('');
+    setManualFormLotNo('');
+    setManualFormStreetNumber('');
+    setManualFormStreetName(initialStreet ?? '');
+    setManualFormStreetType('');
+    setManualFormStreetSuffix('');
     setManualFormSuburb('');
     setManualFormState('');
     setManualFormPostcode('');
@@ -219,9 +230,19 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
 
   const handleManualSubmit = () => {
     const address: Address = {};
-    if (manualFormStreet.trim()) {
-      address.street_name = manualFormStreet.trim();
-    }
+    if (manualFormBuildingName.trim())
+      address.building_name = manualFormBuildingName.trim();
+    if (manualFormLevel.trim()) address.level = manualFormLevel.trim();
+    if (manualFormUnit.trim()) address.unit = manualFormUnit.trim();
+    if (manualFormLotNo.trim()) address.lot_no = manualFormLotNo.trim();
+    if (manualFormStreetNumber.trim())
+      address.street_number = manualFormStreetNumber.trim();
+    if (manualFormStreetName.trim())
+      address.street_name = manualFormStreetName.trim();
+    if (manualFormStreetType.trim())
+      address.street_type = manualFormStreetType.trim();
+    if (manualFormStreetSuffix.trim())
+      address.street_suffix = manualFormStreetSuffix.trim();
     if (manualFormSuburb.trim()) address.suburb = manualFormSuburb.trim();
     if (manualFormState.trim()) address.state = manualFormState.trim();
     if (manualFormPostcode.trim()) address.postcode = manualFormPostcode.trim();
@@ -345,42 +366,86 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       onClose={closeManualModal}
       centered
     >
-      <Stack gap="md">
-        <TextInput
-          label="Street"
-          placeholder="Street address"
-          value={manualFormStreet}
-          onChange={(e) => setManualFormStreet(e.currentTarget.value)}
-        />
-        <TextInput
-          label="Suburb"
-          placeholder="Suburb / City"
-          value={manualFormSuburb}
-          onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
-        />
-        <TextInput
-          label="State / Province"
-          placeholder="State or province"
-          value={manualFormState}
-          onChange={(e) => setManualFormState(e.currentTarget.value)}
-        />
-        <TextInput
-          label="Postcode"
-          placeholder="Postcode"
-          value={manualFormPostcode}
-          onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
-        />
-        <TextInput
-          label="Country"
-          placeholder="Country"
-          value={manualFormCountry}
-          onChange={(e) => setManualFormCountry(e.currentTarget.value)}
-        />
-        <Button onClick={handleManualSubmit}>Save</Button>
-        <Button variant="default" onClick={closeManualModal}>
-          Cancel
-        </Button>
-      </Stack>
+      <ScrollArea.Autosize mah="70vh" type="scroll">
+        <Stack gap="md">
+          <TextInput
+            label="Building name"
+            placeholder="Building name"
+            value={manualFormBuildingName}
+            onChange={(e) => setManualFormBuildingName(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Level"
+            placeholder="Level"
+            value={manualFormLevel}
+            onChange={(e) => setManualFormLevel(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Unit"
+            placeholder="Unit"
+            value={manualFormUnit}
+            onChange={(e) => setManualFormUnit(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Lot no"
+            placeholder="Lot number"
+            value={manualFormLotNo}
+            onChange={(e) => setManualFormLotNo(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Street number"
+            placeholder="Street number"
+            value={manualFormStreetNumber}
+            onChange={(e) => setManualFormStreetNumber(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Street name"
+            placeholder="Street name"
+            value={manualFormStreetName}
+            onChange={(e) => setManualFormStreetName(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Street type"
+            placeholder="e.g. Road, Street"
+            value={manualFormStreetType}
+            onChange={(e) => setManualFormStreetType(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Street suffix"
+            placeholder="e.g. North, East"
+            value={manualFormStreetSuffix}
+            onChange={(e) => setManualFormStreetSuffix(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Suburb"
+            placeholder="Suburb / City"
+            value={manualFormSuburb}
+            onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
+          />
+          <TextInput
+            label="State / Province"
+            placeholder="State or province"
+            value={manualFormState}
+            onChange={(e) => setManualFormState(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Postcode"
+            placeholder="Postcode"
+            value={manualFormPostcode}
+            onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Country"
+            placeholder="Country"
+            value={manualFormCountry}
+            onChange={(e) => setManualFormCountry(e.currentTarget.value)}
+          />
+          <Button onClick={handleManualSubmit}>Save</Button>
+          <Button variant="default" onClick={closeManualModal}>
+            Cancel
+          </Button>
+        </Stack>
+      </ScrollArea.Autosize>
     </Modal>
   );
 
