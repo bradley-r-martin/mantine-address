@@ -82,67 +82,8 @@ describe('AddressInput', () => {
     expect(screen.getByText('Address is required')).toBeInTheDocument();
   });
 
-  describe('missing or invalid provider', () => {
-    const providerRequiredMessage =
-      'Address autocomplete requires a provider to be configured';
-
-    it('renders disabled with error when provider is undefined and allowsManualEntry is false', () => {
-      render(
-        <MantineProvider>
-          <AddressInput
-            {...({ provider: undefined } as unknown as React.ComponentProps<
-              typeof AddressInput
-            >)}
-            allowsManualEntry={false}
-          />
-        </MantineProvider>
-      );
-
-      const input = screen.getByRole('textbox');
-      expect(input).toBeDisabled();
-      expect(screen.getByText(providerRequiredMessage)).toBeInTheDocument();
-    });
-
-    it('renders disabled with error when provider is null and allowsManualEntry is false', () => {
-      render(
-        <MantineProvider>
-          <AddressInput
-            {...({ provider: null } as unknown as React.ComponentProps<
-              typeof AddressInput
-            >)}
-            allowsManualEntry={false}
-          />
-        </MantineProvider>
-      );
-
-      const input = screen.getByRole('textbox');
-      expect(input).toBeDisabled();
-      expect(screen.getByText(providerRequiredMessage)).toBeInTheDocument();
-    });
-
-    it('stays disabled with error after typing and debounce when allowsManualEntry is false (no lookup runs)', async () => {
-      render(
-        <MantineProvider>
-          <AddressInput
-            {...({ provider: undefined } as unknown as React.ComponentProps<
-              typeof AddressInput
-            >)}
-            allowsManualEntry={false}
-          />
-        </MantineProvider>
-      );
-
-      const input = screen.getByRole('textbox');
-      fireEvent.change(input, { target: { value: '123 Main' } });
-      await act(async () => {
-        vi.advanceTimersByTime(400);
-      });
-
-      expect(input).toBeDisabled();
-      expect(screen.getByText(providerRequiredMessage)).toBeInTheDocument();
-    });
-
-    it('when no provider and allowsManualEntry defaults to true, input is not disabled', () => {
+  describe('no provider (manual-only)', () => {
+    it('when no provider, input is not disabled and no provider-required error is shown', () => {
       render(
         <MantineProvider>
           <AddressInput
@@ -156,20 +97,19 @@ describe('AddressInput', () => {
       const input = screen.getByRole('textbox');
       expect(input).not.toBeDisabled();
       expect(
-        screen.queryByText(providerRequiredMessage)
+        screen.queryByText(/provider.*configured|provider.*required/i)
       ).not.toBeInTheDocument();
     });
   });
 
-  describe('manual entry (allowsManualEntry)', () => {
-    it('no provider and allowsManualEntry true: click opens modal', async () => {
+  describe('manual entry (preventManualEntry)', () => {
+    it('no provider: click opens modal', async () => {
       render(
         <MantineProvider>
           <AddressInput
             {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
-            allowsManualEntry={true}
           />
         </MantineProvider>
       );
@@ -186,7 +126,7 @@ describe('AddressInput', () => {
       expect(screen.getByText('Enter address')).toBeInTheDocument();
     });
 
-    it('no provider and allowsManualEntry true: submit manual form calls onChange and closes modal', async () => {
+    it('no provider: submit manual form calls onChange and closes modal', async () => {
       const onChange = vi.fn();
       render(
         <MantineProvider>
@@ -194,7 +134,6 @@ describe('AddressInput', () => {
             {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
-            allowsManualEntry={true}
             onChange={onChange}
           />
         </MantineProvider>
@@ -228,7 +167,7 @@ describe('AddressInput', () => {
       expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
     });
 
-    it('no provider and allowsManualEntry true: cancel closes modal without calling onChange', async () => {
+    it('no provider: cancel closes modal without calling onChange', async () => {
       const onChange = vi.fn();
       render(
         <MantineProvider>
@@ -236,7 +175,6 @@ describe('AddressInput', () => {
             {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
-            allowsManualEntry={true}
             onChange={onChange}
           />
         </MantineProvider>
@@ -263,13 +201,13 @@ describe('AddressInput', () => {
       expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
     });
 
-    it('provider returns no results and allowsManualEntry true: Enter manually option appears and opens modal', async () => {
+    it('provider returns no results and preventManualEntry false (default): Enter manually option appears and opens modal', async () => {
       const provider = createMockProvider({
         getSuggestions: vi.fn().mockResolvedValue([]),
       });
       render(
         <MantineProvider>
-          <AddressInput provider={provider} allowsManualEntry={true} />
+          <AddressInput provider={provider} />
         </MantineProvider>
       );
 
@@ -293,7 +231,7 @@ describe('AddressInput', () => {
       expect(screen.getByText('Enter address')).toBeInTheDocument();
     });
 
-    it('when allowsManualEntry is false and no results, only no-results message is shown (no Enter manually)', async () => {
+    it('when preventManualEntry is true and no results, only no-results message is shown (no Enter manually)', async () => {
       const provider = createMockProvider({
         getSuggestions: vi.fn().mockResolvedValue([]),
       });
@@ -301,7 +239,7 @@ describe('AddressInput', () => {
         <MantineProvider>
           <AddressInput
             provider={provider}
-            allowsManualEntry={false}
+            preventManualEntry
             nothingFoundMessage="No results found"
           />
         </MantineProvider>
