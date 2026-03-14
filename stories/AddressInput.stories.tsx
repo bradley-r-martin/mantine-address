@@ -11,14 +11,14 @@ import {
   Code,
   createTheme,
 } from '@mantine/core';
-import { AddressInput } from './AddressInput';
+import { AddressInput } from '@/AddressInput';
 import type {
   Address,
   AddressLookupProvider,
   AddressSuggestion,
-} from './types';
-import { international, australian } from './formatters';
-import { GooglePlacesProvider } from './providers/GooglePlacesProvider';
+} from '@/types';
+import { international, australian } from '@/formatters';
+import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
 
 // Pre-filled at build time if the env var is set; users can override in the Controls panel.
 const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
