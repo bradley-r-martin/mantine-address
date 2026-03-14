@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { international, australian } from './index';
-import type { Address } from '../types';
+import { international, australian } from '@/formatters';
+import type { Address } from '@/types';
 
 const FULL_ADDRESS: Address = {
   street_number: '123',

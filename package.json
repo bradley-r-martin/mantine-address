@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "prepare": "husky",
     "test": "vitest run",
     "storybook": "storybook dev -p 6006",

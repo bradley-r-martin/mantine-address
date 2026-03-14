@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider, createTheme } from '@mantine/core';
-import { AddressInput } from './AddressInput';
-import type { AddressLookupProvider, AddressSuggestion } from './types';
+import { AddressInput } from '@/AddressInput';
+import type { AddressLookupProvider, AddressSuggestion } from '@/types';
 
 describe('MantineProvider defaultProps (factory / useProps)', () => {
   describe('AddressInput', () => {

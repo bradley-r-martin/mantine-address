@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AddressInput } from './index';
+import { AddressInput } from '@/index';
 
 describe('library', () => {
   it('exports AddressInput', () => {
