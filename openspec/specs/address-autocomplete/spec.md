@@ -71,6 +71,27 @@ The component SHALL accept and forward all valid Mantine `Autocomplete` props (e
 
 ---
 
+### Requirement: Component accepts an optional formatter for address display
+
+The `AddressInput` component SHALL accept an optional `formatter` prop of type `AddressFormatAdapter`. When provided, the component SHALL use `formatter.format(address)` to produce the display string for the selected address. When omitted, the component SHALL use the built-in international formatter so that display always goes through a formatter.
+
+#### Scenario: Formatter prop is provided
+
+- **WHEN** a consumer renders `<AddressInput adapter={a} formatter={australianAddressFormat} />` and the user selects an address
+- **THEN** the input displays the address by calling `formatter.format(address)` with the selected address
+
+#### Scenario: Formatter prop is omitted
+
+- **WHEN** a consumer renders `<AddressInput adapter={a} />` with no `formatter` prop and the user selects an address
+- **THEN** the input displays the address using the default international formatter (same display as current behaviour when no region was set)
+
+#### Scenario: Display after selection uses formatter
+
+- **WHEN** the user selects a suggestion and `adapter.getDetails` resolves with an `Address`
+- **THEN** the value shown in the input is the result of the active formatter's `format(address)` (either the provided formatter or the default international formatter)
+
+---
+
 ### Requirement: Component is exported from package root
 
 The `AddressAutocomplete` component, `AddressLookupAdapter` type, `AddressSuggestion` type, and `AddressDetails` type SHALL all be exported from the package's main entry point.
