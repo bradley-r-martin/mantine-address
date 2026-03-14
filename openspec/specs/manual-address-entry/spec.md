@@ -1,29 +1,30 @@
-### Requirement: AddressInput accepts allowsManualEntry prop
+### Requirement: AddressInput accepts preventManualEntry prop
 
-The component SHALL accept an optional boolean prop `allowsManualEntry`. When omitted, it SHALL default to `true`. When `true`, the component SHALL allow the user to set an address via a manual-entry modal in addition to (or instead of) provider suggestions. When `false`, the component SHALL NOT show any manual-entry option or open the manual-entry modal.
+The component SHALL accept an optional boolean prop `preventManualEntry`. When omitted, it SHALL default to `false`. This prop SHALL only have effect when a provider is supplied. When a provider is set and `preventManualEntry` is `false` or omitted, the component SHALL allow the user to set an address via a manual-entry modal (e.g. by selecting "Enter manually" when the provider returns no results). When a provider is set and `preventManualEntry` is `true`, the component SHALL NOT show an "Enter manually" option in the dropdown and SHALL NOT allow opening the manual-entry modal from the dropdown. When no provider is supplied, the component SHALL always operate in manual-only mode: the input SHALL be enabled and focus or click SHALL open the manual-entry modal; the `preventManualEntry` prop SHALL have no effect in that case.
 
-#### Scenario: allowsManualEntry defaults to true
+#### Scenario: preventManualEntry defaults to false
 
-- **WHEN** a consumer renders the component without passing `allowsManualEntry`
-- **THEN** manual entry is enabled (e.g. "enter manually" appears when there are no results, and with no provider the input opens the modal on interaction)
+- **WHEN** a consumer renders the component without passing `preventManualEntry` and a provider is set
+- **THEN** manual entry is allowed (e.g. "Enter manually" appears when the provider returns no results)
 
-#### Scenario: allowsManualEntry is false
+#### Scenario: preventManualEntry is true with provider
 
-- **WHEN** a consumer renders the component with `allowsManualEntry={false}`
+- **WHEN** a consumer renders the component with `preventManualEntry={true}` and a provider is supplied
 - **THEN** no "enter manually" option is shown when the provider returns no results
-- **THEN** when no provider is supplied, the input is disabled with error as in the existing requirement (missing provider)
+- **THEN** the user cannot open the manual-entry modal from the no-results dropdown
 
-#### Scenario: allowsManualEntry is true with provider and no results
+#### Scenario: preventManualEntry false with provider and no results
 
-- **WHEN** the consumer has set `allowsManualEntry={true}` (or left it default), a provider is configured, and the provider returns an empty array for a non-empty query
+- **WHEN** the consumer has set `preventManualEntry={false}` (or left it default), a provider is configured, and the provider returns an empty array for a non-empty query
 - **THEN** the dropdown SHALL show an option that allows the user to enter an address manually (e.g. "Enter manually")
 - **THEN** selecting that option SHALL open the manual-entry modal
 
-#### Scenario: allowsManualEntry is true with no provider
+#### Scenario: No provider — manual-only regardless of preventManualEntry
 
-- **WHEN** the consumer has set `allowsManualEntry={true}` (or left it default) and no provider is supplied (e.g. `provider={null}` or `provider={undefined}`)
-- **THEN** the input SHALL NOT be disabled
+- **WHEN** no provider is supplied (e.g. `provider={null}` or `provider={undefined}`)
+- **THEN** the input SHALL NOT be disabled and SHALL NOT show a provider-required error
 - **THEN** when the user clicks or focuses the input, the manual-entry modal SHALL open
+- **THEN** the value of `preventManualEntry` has no effect (manual entry is always the only path)
 
 ---
 
