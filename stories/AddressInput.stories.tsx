@@ -215,7 +215,7 @@ const meta: Meta<typeof AddressInput> = {
     docs: {
       description: {
         component:
-          '**Autocomplete only.** This component supports address input via autocomplete from a lookup provider. A provider must be provided to supply suggestions; if no provider is loaded, the field is disabled and shows an error that the provider must be configured.',
+          'Address input with optional autocomplete. When a lookup provider is supplied, the component shows suggestions and can optionally offer "Enter manually" when there are no results. When no provider is supplied, the component operates in manual-only mode: the input is enabled and clicking or focusing opens the manual-entry modal.',
       },
     },
   },
@@ -229,15 +229,15 @@ const meta: Meta<typeof AddressInput> = {
   argTypes: {
     provider: {
       description:
-        'Lookup provider that provides autocomplete suggestions and address details. Optional when allowsManualEntry is true (click/focus opens manual-entry modal). When allowsManualEntry is false, required; without a provider the field is disabled and shows an error. Must implement `AddressLookupProvider` (`getSuggestions`, `getDetails`).',
+        'Lookup provider for autocomplete suggestions and address details. When absent, the component runs in manual-only mode (input enabled, click/focus opens manual-entry modal). Must implement `AddressLookupProvider` (`getSuggestions`, `getDetails`).',
       table: { type: { summary: 'AddressLookupProvider' } },
     },
-    allowsManualEntry: {
+    preventManualEntry: {
       description:
-        'When true (default), allow setting an address via a manual-entry modal when the provider returns no results or when no provider is supplied. When false, provider is required and no manual option is shown.',
+        'When true, do not show an "Enter manually" option when the provider returns no results. Only has effect when a provider is set; with no provider, manual entry is always the only path.',
       table: {
         type: { summary: 'boolean' },
-        defaultValue: { summary: 'true' },
+        defaultValue: { summary: 'false' },
       },
       control: 'boolean',
     },
@@ -267,7 +267,7 @@ export default meta;
 type Story = StoryObj<typeof AddressInput>;
 
 // --------------------------------------------------------------------------
-// Stories — autocomplete only; provider required. No provider → error + disabled.
+// Stories — autocomplete with provider; no provider → manual-only.
 // --------------------------------------------------------------------------
 
 /**
@@ -302,33 +302,6 @@ export const WithError: Story = {
     label: 'Address',
     placeholder: 'Start typing…',
     error: 'A valid street address is required.',
-  },
-};
-
-/**
- * When no provider is loaded and manual entry is disabled, the field is disabled and
- * shows an error that the provider must be configured. Set allowsManualEntry={false}
- * to get this behavior when no provider is supplied.
- */
-export const NoProviderLoaded: Story = {
-  name: 'No provider loaded (error + disabled)',
-  render: () => (
-    <AddressInput
-      {...({ provider: undefined } as unknown as ComponentProps<
-        typeof AddressInput
-      >)}
-      allowsManualEntry={false}
-      label="Address"
-      placeholder="Provider required"
-    />
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'If no provider is loaded and `allowsManualEntry` is false, the field renders disabled with an error. With `allowsManualEntry` true (default), clicking the input opens the manual-entry modal instead.',
-      },
-    },
   },
 };
 
@@ -619,21 +592,20 @@ export const NoResults: Story = {
 };
 
 // --------------------------------------------------------------------------
-// Manual entry (allowsManualEntry)
+// Manual entry (no provider = manual-only; preventManualEntry when provider set)
 // --------------------------------------------------------------------------
 
 /**
- * When no provider is supplied and allowsManualEntry is true (the default),
- * the input stays enabled. Click or focus the input to open the manual-entry
- * modal and enter an address by hand.
+ * When no provider is supplied, the component is manual-only: the input is
+ * enabled and click or focus opens the manual-entry modal.
  */
 export const ManualEntryNoProvider: Story = {
   name: 'Manual entry / No provider (click opens modal)',
   render: () => (
     <Stack gap="xs" style={{ maxWidth: 480 }}>
       <Text size="sm" c="dimmed">
-        No provider; <Code>allowsManualEntry</Code> defaults to true. Click the
-        input to open the manual-entry modal.
+        No provider — manual-only. Click the input to open the manual-entry
+        modal.
       </Text>
       <AddressInput
         {...({ provider: null } as unknown as ComponentProps<
@@ -649,7 +621,7 @@ export const ManualEntryNoProvider: Story = {
     docs: {
       description: {
         story:
-          'With no provider and `allowsManualEntry` true (default), the input is not disabled. Clicking or focusing the input opens a modal where the user can enter address fields manually.',
+          'With no provider, the component runs in manual-only mode: the input is enabled and clicking or focusing opens the manual-entry modal.',
       },
     },
   },
@@ -666,15 +638,14 @@ const emptyProvider: AddressLookupProvider = {
 };
 
 /**
- * When the provider returns no results and allowsManualEntry is true, the
- * dropdown shows an "Enter manually" option. Select it to open the
+ * When the provider returns no results and preventManualEntry is false (default),
+ * the dropdown shows an "Enter manually" option. Select it to open the
  * manual-entry modal (optionally pre-filled with your query).
  */
 export const NoResultsEnterManually: Story = {
   name: 'Manual entry / No results (Enter manually option)',
   args: {
     provider: emptyProvider,
-    allowsManualEntry: true,
     label: 'Address',
     placeholder:
       'Type something — no suggestions; then choose "Enter manually"…',
@@ -686,64 +657,39 @@ export const NoResultsEnterManually: Story = {
     docs: {
       description: {
         story:
-          'When the provider returns no results for a non-empty query and `allowsManualEntry` is true, the dropdown shows an "Enter manually" option. Selecting it opens the manual-entry modal.',
+          'When the provider returns no results for a non-empty query (and `preventManualEntry` is false, the default), the dropdown shows an "Enter manually" option. Selecting it opens the manual-entry modal.',
       },
     },
   },
 };
 
 /**
- * When allowsManualEntry is false: with no provider the input is disabled and
- * shows the provider-required error; with a provider that returns no results,
- * only the "No results found" message is shown (no "Enter manually" option).
+ * When preventManualEntry is true and a provider is set, the dropdown shows
+ * only the no-results message (no "Enter manually" option).
  */
-function AllowsManualEntryFalseStory() {
-  return (
-    <Stack gap="xl" style={{ maxWidth: 480 }}>
-      <Stack gap="xs">
-        <Text size="sm" fw={600} c="dimmed">
-          No provider + allowsManualEntry false
-        </Text>
-        <Text size="xs" c="dimmed">
-          Input is disabled with error; no manual-entry option.
-        </Text>
-        <AddressInput
-          {...({ provider: null } as unknown as ComponentProps<
-            typeof AddressInput
-          >)}
-          allowsManualEntry={false}
-          label="Address"
-          placeholder="Provider required"
-        />
-      </Stack>
-      <Stack gap="xs">
-        <Text size="sm" fw={600} c="dimmed">
-          Provider returns no results + allowsManualEntry false
-        </Text>
-        <Text size="xs" c="dimmed">
-          Only &quot;No results found&quot; in the dropdown; no &quot;Enter
-          manually&quot; option.
-        </Text>
-        <AddressInput
-          provider={emptyProvider}
-          allowsManualEntry={false}
-          label="Address"
-          placeholder="Type anything…"
-          nothingFoundMessage="No results found"
-        />
-      </Stack>
+export const PreventManualEntryTrue: Story = {
+  name: 'Manual entry / preventManualEntry true',
+  render: () => (
+    <Stack gap="xs" style={{ maxWidth: 480 }}>
+      <Text size="sm" c="dimmed">
+        Provider returns no results + <Code>preventManualEntry</Code> true. Only
+        &quot;No results found&quot; in the dropdown; no &quot;Enter
+        manually&quot; option.
+      </Text>
+      <AddressInput
+        provider={emptyProvider}
+        preventManualEntry
+        label="Address"
+        placeholder="Type anything…"
+        nothingFoundMessage="No results found"
+      />
     </Stack>
-  );
-}
-
-export const AllowsManualEntryFalse: Story = {
-  name: 'Manual entry / allowsManualEntry false',
-  render: () => <AllowsManualEntryFalseStory />,
+  ),
   parameters: {
     docs: {
       description: {
         story:
-          'With `allowsManualEntry={false}`: (1) No provider → input disabled and shows provider-required error. (2) Provider returns no results → only the no-results message is shown, no "Enter manually" option.',
+          'With `preventManualEntry={true}` and a provider set, when the provider returns no results only the no-results message is shown; no "Enter manually" option. (When no provider is supplied, the component is always manual-only and this prop has no effect.)',
       },
     },
   },

@@ -41,23 +41,20 @@ const ADDRESS_FORM_KEYS: (keyof Address)[] = [
 /** Sentinel value used to render the "no results" row inside the dropdown. */
 const NO_RESULTS_VALUE = '__mantine-address-no-results__';
 
-/** Value for the "Enter manually" dropdown option when allowsManualEntry is true. */
+/** Value for the "Enter manually" dropdown option when preventManualEntry is false (only used when a provider is set). */
 const ENTER_MANUALLY_VALUE = '__mantine-address-enter-manually__';
-
-/** Message shown when the component is rendered without a valid provider. */
-const PROVIDER_REQUIRED_MESSAGE =
-  'Address autocomplete requires a provider to be configured';
 
 export interface AddressInputProps extends Omit<
   AutocompleteProps,
   'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
 > {
-  /** Lookup provider that provides address suggestions and details. Optional when allowsManualEntry is true. */
+  /** Lookup provider for address suggestions and details. When absent, the component operates in manual-only mode (input enabled, focus/click opens manual-entry modal). */
   provider?: AddressLookupProvider | null;
   /**
-   * When true (default), allow setting an address via a manual-entry modal when the provider returns no results or when no provider is supplied. When false, provider is required and no manual option is shown.
+   * When true, do not show an "Enter manually" option when the provider returns no results. Only has effect when a provider is set; when no provider is supplied, manual entry is always the only path.
+   * @default false
    */
-  allowsManualEntry?: boolean;
+  preventManualEntry?: boolean;
   /**
    * The selected address (controlled). When undefined, component is uncontrolled and uses defaultValue.
    */
@@ -100,7 +97,7 @@ const defaultProps = {
   debounce: 300,
   nothingFoundMessage: 'No results found',
   format: international,
-  allowsManualEntry: true,
+  preventManualEntry: false,
 } satisfies Partial<AddressInputProps>;
 
 function highlightLabel(
@@ -163,7 +160,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const props = useProps('AddressInput', defaultProps, _props);
   const {
     provider,
-    allowsManualEntry,
+    preventManualEntry,
     format: formatProp,
     debounce: debounceMs,
     value: valueProp,
@@ -331,9 +328,9 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       .catch(() => {});
   };
 
-  // When no results: show disabled no-results message; when allowsManualEntry also show selectable "Enter manually".
+  // When no results: show disabled no-results message; when !preventManualEntry also show selectable "Enter manually".
   const data: (string | ComboboxItem)[] = showNoResults
-    ? allowsManualEntry
+    ? !preventManualEntry
       ? [
           { value: NO_RESULTS_VALUE, label: '', disabled: true },
           { value: ENTER_MANUALLY_VALUE, label: 'Enter manually' },
@@ -388,7 +385,6 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   );
 
   if (provider == null) {
-    const noProviderAllowsManual = allowsManualEntry === true;
     return (
       <>
         {nameProp ? renderHiddenInputs(nameProp, address) : null}
@@ -398,15 +394,9 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
           value={displayValue}
           onChange={() => {}}
           onOptionSubmit={() => {}}
-          disabled={!noProviderAllowsManual}
-          error={noProviderAllowsManual ? undefined : PROVIDER_REQUIRED_MESSAGE}
-          onFocus={
-            noProviderAllowsManual ? handleOpenManualModalNoProvider : undefined
-          }
-          onClick={
-            noProviderAllowsManual ? handleOpenManualModalNoProvider : undefined
-          }
-          readOnly={noProviderAllowsManual}
+          onFocus={handleOpenManualModalNoProvider}
+          onClick={handleOpenManualModalNoProvider}
+          readOnly
           {...rest}
         />
         {manualModal}
