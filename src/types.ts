@@ -1,7 +1,7 @@
 export interface AddressSuggestion {
   id: string;
   label: string;
-  /** Byte-offset ranges within `label` that matched the user's input. Optional — omit if the adapter does not provide this data. */
+  /** Byte-offset ranges within `label` that matched the user's input. Optional — omit if the provider does not provide this data. */
   matchedSubstrings?: Array<{ offset: number; length: number }>;
 }
 
@@ -33,7 +33,7 @@ export interface Address {
  */
 export type AddressDetails = Address;
 
-export interface AddressLookupAdapter {
+export interface AddressLookupProvider {
   getSuggestions(input: string): Promise<AddressSuggestion[]>;
   getDetails(id: string): Promise<Address>;
 }

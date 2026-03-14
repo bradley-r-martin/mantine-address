@@ -1,5 +1,5 @@
 import type { Address } from '../types';
-import type { AddressFormatAdapter, AddressToEnvelopeOptions } from './types';
+import type { AddressFormatProvider, AddressToEnvelopeOptions } from './types';
 import { buildStreetLine, nonEmpty } from './utilities';
 
 /** Australian state/territory codes for display. */
@@ -68,7 +68,7 @@ function toEnvelope(
  * Australian formatter: state as code (e.g. VIC), comma-separated parts.
  * Accepts any Address; does not validate or restrict by country.
  */
-export const australian: AddressFormatAdapter = {
+export const australian: AddressFormatProvider = {
   toString,
   toEnvelope,
 };

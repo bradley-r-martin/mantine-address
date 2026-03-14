@@ -2,8 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { AddressInput } from './AddressInput';
-import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
-import { australian, type AddressFormatAdapter } from './formatters';
+import type {
+  Address,
+  AddressLookupProvider,
+  AddressSuggestion,
+} from './types';
+import { australian, type AddressFormatProvider } from './formatters';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },
@@ -19,9 +23,9 @@ const mockAddress: Address = {
   country: 'US',
 };
 
-function createMockAdapter(
-  overrides?: Partial<AddressLookupAdapter>
-): AddressLookupAdapter {
+function createMockProvider(
+  overrides?: Partial<AddressLookupProvider>
+): AddressLookupProvider {
   return {
     getSuggestions: vi.fn().mockResolvedValue(mockSuggestions),
     getDetails: vi.fn().mockResolvedValue(mockAddress),
@@ -31,7 +35,7 @@ function createMockAdapter(
 
 function renderComponent(
   props: Partial<React.ComponentProps<typeof AddressInput>> & {
-    adapter: AddressLookupAdapter;
+    provider: AddressLookupProvider;
   }
 ) {
   return render(
@@ -52,13 +56,13 @@ describe('AddressInput', () => {
   });
 
   it('renders a text input', () => {
-    renderComponent({ adapter: createMockAdapter() });
+    renderComponent({ provider: createMockProvider() });
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
   it('renders with label and placeholder props forwarded', () => {
     renderComponent({
-      adapter: createMockAdapter(),
+      provider: createMockProvider(),
       label: 'Shipping address',
       placeholder: 'Start typing...',
     });
@@ -71,22 +75,22 @@ describe('AddressInput', () => {
 
   it('renders with error prop forwarded', () => {
     renderComponent({
-      adapter: createMockAdapter(),
+      provider: createMockProvider(),
       error: 'Address is required',
     });
 
     expect(screen.getByText('Address is required')).toBeInTheDocument();
   });
 
-  describe('missing or invalid adapter', () => {
-    const adapterRequiredMessage =
-      'Address autocomplete requires an adapter to be configured';
+  describe('missing or invalid provider', () => {
+    const providerRequiredMessage =
+      'Address autocomplete requires a provider to be configured';
 
-    it('renders disabled with error when adapter is undefined', () => {
+    it('renders disabled with error when provider is undefined', () => {
       render(
         <MantineProvider>
           <AddressInput
-            {...({ adapter: undefined } as unknown as React.ComponentProps<
+            {...({ provider: undefined } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
           />
@@ -95,14 +99,14 @@ describe('AddressInput', () => {
 
       const input = screen.getByRole('textbox');
       expect(input).toBeDisabled();
-      expect(screen.getByText(adapterRequiredMessage)).toBeInTheDocument();
+      expect(screen.getByText(providerRequiredMessage)).toBeInTheDocument();
     });
 
-    it('renders disabled with error when adapter is null', () => {
+    it('renders disabled with error when provider is null', () => {
       render(
         <MantineProvider>
           <AddressInput
-            {...({ adapter: null } as unknown as React.ComponentProps<
+            {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
           />
@@ -111,14 +115,14 @@ describe('AddressInput', () => {
 
       const input = screen.getByRole('textbox');
       expect(input).toBeDisabled();
-      expect(screen.getByText(adapterRequiredMessage)).toBeInTheDocument();
+      expect(screen.getByText(providerRequiredMessage)).toBeInTheDocument();
     });
 
     it('stays disabled with error after typing and debounce (no lookup runs)', async () => {
       render(
         <MantineProvider>
           <AddressInput
-            {...({ adapter: undefined } as unknown as React.ComponentProps<
+            {...({ provider: undefined } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
           />
@@ -132,37 +136,37 @@ describe('AddressInput', () => {
       });
 
       expect(input).toBeDisabled();
-      expect(screen.getByText(adapterRequiredMessage)).toBeInTheDocument();
+      expect(screen.getByText(providerRequiredMessage)).toBeInTheDocument();
     });
   });
 
-  it('with valid adapter renders enabled and without adapter-required error', () => {
-    renderComponent({ adapter: createMockAdapter() });
+  it('with valid provider renders enabled and without provider-required error', () => {
+    renderComponent({ provider: createMockProvider() });
 
     const input = screen.getByRole('textbox');
     expect(input).not.toBeDisabled();
     expect(
       screen.queryByText(
-        'Address autocomplete requires an adapter to be configured'
+        'Address autocomplete requires a provider to be configured'
       )
     ).not.toBeInTheDocument();
   });
 
   describe('getSuggestions debounce', () => {
     it('does not call getSuggestions immediately on input change', () => {
-      const adapter = createMockAdapter();
-      renderComponent({ adapter });
+      const provider = createMockProvider();
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123 Main' },
       });
 
-      expect(adapter.getSuggestions).not.toHaveBeenCalled();
+      expect(provider.getSuggestions).not.toHaveBeenCalled();
     });
 
     it('calls getSuggestions after the default 300ms debounce', async () => {
-      const adapter = createMockAdapter();
-      renderComponent({ adapter });
+      const provider = createMockProvider();
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123 Main' },
@@ -172,12 +176,12 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(300);
       });
 
-      expect(adapter.getSuggestions).toHaveBeenCalledWith('123 Main');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main');
     });
 
     it('respects a custom debounce prop', async () => {
-      const adapter = createMockAdapter();
-      renderComponent({ adapter, debounce: 500 });
+      const provider = createMockProvider();
+      renderComponent({ provider, debounce: 500 });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: 'test' },
@@ -186,17 +190,17 @@ describe('AddressInput', () => {
       await act(async () => {
         vi.advanceTimersByTime(499);
       });
-      expect(adapter.getSuggestions).not.toHaveBeenCalled();
+      expect(provider.getSuggestions).not.toHaveBeenCalled();
 
       await act(async () => {
         vi.advanceTimersByTime(1);
       });
-      expect(adapter.getSuggestions).toHaveBeenCalledWith('test');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('test');
     });
 
     it('debounces rapid keystrokes — only fires once after typing stops', async () => {
-      const adapter = createMockAdapter();
-      renderComponent({ adapter });
+      const provider = createMockProvider();
+      renderComponent({ provider });
 
       const input = screen.getByRole('textbox');
       fireEvent.change(input, { target: { value: '1' } });
@@ -207,15 +211,15 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(300);
       });
 
-      expect(adapter.getSuggestions).toHaveBeenCalledTimes(1);
-      expect(adapter.getSuggestions).toHaveBeenCalledWith('123');
+      expect(provider.getSuggestions).toHaveBeenCalledTimes(1);
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123');
     });
   });
 
   describe('empty input', () => {
     it('does not call getSuggestions when input is cleared', async () => {
-      const adapter = createMockAdapter();
-      renderComponent({ adapter });
+      const provider = createMockProvider();
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
 
@@ -223,14 +227,14 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(300);
       });
 
-      expect(adapter.getSuggestions).not.toHaveBeenCalled();
+      expect(provider.getSuggestions).not.toHaveBeenCalled();
     });
   });
 
   describe('loading indicator', () => {
     it('shows the loading indicator while getSuggestions is in flight', async () => {
       let resolveSuggestions!: (value: AddressSuggestion[]) => void;
-      const adapter = createMockAdapter({
+      const provider = createMockProvider({
         getSuggestions: vi.fn(
           () =>
             new Promise<AddressSuggestion[]>((res) => {
@@ -238,7 +242,7 @@ describe('AddressInput', () => {
             })
         ),
       });
-      renderComponent({ adapter });
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123' },
@@ -259,7 +263,7 @@ describe('AddressInput', () => {
 
     it('hides the loading indicator when getSuggestions rejects', async () => {
       let rejectSuggestions!: (reason: Error) => void;
-      const adapter = createMockAdapter({
+      const provider = createMockProvider({
         getSuggestions: vi.fn(
           () =>
             new Promise<AddressSuggestion[]>((_, rej) => {
@@ -267,7 +271,7 @@ describe('AddressInput', () => {
             })
         ),
       });
-      renderComponent({ adapter });
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123' },
@@ -287,7 +291,7 @@ describe('AddressInput', () => {
     });
 
     it('does not show loading indicator when input is empty', () => {
-      renderComponent({ adapter: createMockAdapter() });
+      renderComponent({ provider: createMockProvider() });
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
   });
@@ -301,10 +305,10 @@ describe('AddressInput', () => {
           matchedSubstrings: [{ offset: 0, length: 3 }],
         },
       ];
-      const adapter = createMockAdapter({
+      const provider = createMockProvider({
         getSuggestions: vi.fn().mockResolvedValue(highlightedSuggestions),
       });
-      renderComponent({ adapter });
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123' },
@@ -319,17 +323,17 @@ describe('AddressInput', () => {
         expect(marks[0].textContent).toBe('123');
       }
       // getSuggestions is the minimum verifiable behavior when jsdom doesn't render options
-      expect(adapter.getSuggestions).toHaveBeenCalledWith('123');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123');
     });
 
     it('renders the label as plain text when matchedSubstrings is absent', async () => {
       const plainSuggestions: AddressSuggestion[] = [
         { id: 'id1', label: '123 Main St' },
       ];
-      const adapter = createMockAdapter({
+      const provider = createMockProvider({
         getSuggestions: vi.fn().mockResolvedValue(plainSuggestions),
       });
-      renderComponent({ adapter });
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123' },
@@ -340,16 +344,16 @@ describe('AddressInput', () => {
       await act(async () => {});
 
       expect(document.querySelectorAll('mark')).toHaveLength(0);
-      expect(adapter.getSuggestions).toHaveBeenCalledWith('123');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123');
     });
   });
 
   describe('no-results message', () => {
-    it('shows the default no-results message when the adapter returns an empty array', async () => {
-      const adapter = createMockAdapter({
+    it('shows the default no-results message when the provider returns an empty array', async () => {
+      const provider = createMockProvider({
         getSuggestions: vi.fn().mockResolvedValue([]),
       });
-      renderComponent({ adapter });
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: 'zzz' },
@@ -364,7 +368,7 @@ describe('AddressInput', () => {
 
     it('does not show no-results message while a request is loading', async () => {
       let resolveSuggestions!: (value: AddressSuggestion[]) => void;
-      const adapter = createMockAdapter({
+      const provider = createMockProvider({
         getSuggestions: vi.fn(
           () =>
             new Promise<AddressSuggestion[]>((res) => {
@@ -372,7 +376,7 @@ describe('AddressInput', () => {
             })
         ),
       });
-      renderComponent({ adapter });
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: 'zzz' },
@@ -390,7 +394,7 @@ describe('AddressInput', () => {
     });
 
     it('does not show no-results message when input is empty', async () => {
-      renderComponent({ adapter: createMockAdapter() });
+      renderComponent({ provider: createMockProvider() });
 
       fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
       await act(async () => {
@@ -401,10 +405,10 @@ describe('AddressInput', () => {
     });
 
     it('shows a consumer-supplied nothingFoundMessage override', async () => {
-      const adapter = createMockAdapter({
+      const provider = createMockProvider({
         getSuggestions: vi.fn().mockResolvedValue([]),
       });
-      renderComponent({ adapter, nothingFoundMessage: 'No addresses found' });
+      renderComponent({ provider, nothingFoundMessage: 'No addresses found' });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: 'zzz' },
@@ -420,9 +424,9 @@ describe('AddressInput', () => {
 
   describe('option selection', () => {
     it('calls getDetails and onChange(address) when an option is submitted', async () => {
-      const adapter = createMockAdapter();
+      const provider = createMockProvider();
       const onChange = vi.fn();
-      renderComponent({ adapter, onChange });
+      renderComponent({ provider, onChange });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123 Main' },
@@ -433,7 +437,7 @@ describe('AddressInput', () => {
       // Flush the getSuggestions promise resolution and React state update
       await act(async () => {});
 
-      expect(adapter.getSuggestions).toHaveBeenCalledWith('123 Main');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main');
 
       const options = screen.queryAllByRole('option');
       if (options.length > 0) {
@@ -443,7 +447,7 @@ describe('AddressInput', () => {
         // Flush the getDetails promise and onChange callback
         await act(async () => {});
 
-        expect(adapter.getDetails).toHaveBeenCalledWith('id1');
+        expect(provider.getDetails).toHaveBeenCalledWith('id1');
         expect(onChange).toHaveBeenCalledWith(mockAddress);
       }
       // If Mantine doesn't render options in jsdom the getSuggestions assertion
@@ -451,8 +455,8 @@ describe('AddressInput', () => {
     });
 
     it('does not throw when onChange is not provided', async () => {
-      const adapter = createMockAdapter();
-      renderComponent({ adapter });
+      const provider = createMockProvider();
+      renderComponent({ provider });
 
       fireEvent.change(screen.getByRole('textbox'), {
         target: { value: '123 Main' },
@@ -461,14 +465,14 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(300);
       });
 
-      expect(adapter.getSuggestions).toHaveBeenCalled();
+      expect(provider.getSuggestions).toHaveBeenCalled();
     });
   });
 
   describe('format', () => {
     it('displays address using international formatter when format is omitted', () => {
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         value: mockAddress,
       });
 
@@ -477,12 +481,12 @@ describe('AddressInput', () => {
     });
 
     it('displays address using custom formatter when format prop is provided', () => {
-      const customFormat: AddressFormatAdapter = {
+      const customFormat: AddressFormatProvider = {
         toString: (addr) => `Custom: ${addr.street_number} ${addr.street_name}`,
         toEnvelope: () => '',
       };
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         value: mockAddress,
         format: customFormat,
       });
@@ -493,7 +497,7 @@ describe('AddressInput', () => {
 
     it('displays address using Australian formatter when format is australian', () => {
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         value: mockAddress,
         format: australian,
       });
@@ -505,9 +509,9 @@ describe('AddressInput', () => {
 
   describe('controlled mode', () => {
     it('clears display and typed state when value is set to null', async () => {
-      const adapter = createMockAdapter();
+      const provider = createMockProvider();
       const { rerender } = renderComponent({
-        adapter,
+        provider,
         value: mockAddress,
         onChange: () => {},
       });
@@ -517,7 +521,7 @@ describe('AddressInput', () => {
 
       rerender(
         <MantineProvider>
-          <AddressInput adapter={adapter} value={null} onChange={() => {}} />
+          <AddressInput provider={provider} value={null} onChange={() => {}} />
         </MantineProvider>
       );
 
@@ -530,7 +534,7 @@ describe('AddressInput', () => {
   describe('form support: hidden inputs', () => {
     it('renders hidden inputs with correct name and value when name and address are set', () => {
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         name: 'address',
         value: mockAddress,
       });
@@ -557,7 +561,7 @@ describe('AddressInput', () => {
 
     it('omits hidden inputs when name is omitted', () => {
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         value: mockAddress,
       });
 
@@ -569,7 +573,7 @@ describe('AddressInput', () => {
 
     it('renders no address hidden inputs when value is null', () => {
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         name: 'address',
         value: null,
       });
@@ -586,7 +590,7 @@ describe('AddressInput', () => {
         longitude: -89.65,
       };
       renderComponent({
-        adapter: createMockAdapter(),
+        provider: createMockProvider(),
         name: 'location',
         value: addressWithCoords,
       });
@@ -602,12 +606,12 @@ describe('AddressInput', () => {
 
   describe('form support: ref reset', () => {
     it('ref.reset() clears uncontrolled address and typed input', async () => {
-      const adapter = createMockAdapter();
+      const provider = createMockProvider();
       const ref = {
         current: null as React.ComponentRef<typeof AddressInput> | null,
       };
       renderComponent({
-        adapter,
+        provider,
         ref,
         defaultValue: mockAddress,
       });

@@ -12,9 +12,13 @@ import {
   createTheme,
 } from '@mantine/core';
 import { AddressInput } from './AddressInput';
-import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
+import type {
+  Address,
+  AddressLookupProvider,
+  AddressSuggestion,
+} from './types';
 import { international, australian } from './formatters';
-import { GooglePlacesAdapter } from './adapters/GooglePlacesAdapter';
+import { GooglePlacesProvider } from './providers/GooglePlacesProvider';
 
 // Pre-filled at build time if the env var is set; users can override in the Controls panel.
 const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
@@ -22,7 +26,7 @@ const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
   | undefined;
 
 // --------------------------------------------------------------------------
-// Mock adapter used by non-Google stories
+// Mock provider used by non-Google stories
 // --------------------------------------------------------------------------
 
 const STUB_SUGGESTIONS: AddressSuggestion[] = [
@@ -40,7 +44,7 @@ const STUB_ADDRESS: Address = {
   country: 'US',
 };
 
-const mockAdapter: AddressLookupAdapter = {
+const mockProvider: AddressLookupProvider = {
   getSuggestions: async (input: string) => {
     if (!input) return [];
     await new Promise((r) => setTimeout(r, 200));
@@ -84,7 +88,7 @@ function GooglePlacesStory({
     return apiKey ? 'idle' : 'idle';
   });
 
-  const adapterRef = useRef<GooglePlacesAdapter | null>(null);
+  const providerRef = useRef<GooglePlacesProvider | null>(null);
 
   useEffect(() => {
     if (!apiKey) {
@@ -95,7 +99,7 @@ function GooglePlacesStory({
     // Already loaded for this key
     if (scriptCache.state === 'loaded' && scriptCache.key === apiKey) {
       setScriptState('loaded');
-      adapterRef.current = new GooglePlacesAdapter({ apiKey });
+      providerRef.current = new GooglePlacesProvider({ apiKey });
       return;
     }
 
@@ -116,7 +120,7 @@ function GooglePlacesStory({
 
     script.addEventListener('load', () => {
       scriptCache.state = 'loaded';
-      adapterRef.current = new GooglePlacesAdapter({ apiKey });
+      providerRef.current = new GooglePlacesProvider({ apiKey });
       setScriptState('loaded');
     });
 
@@ -181,10 +185,10 @@ function GooglePlacesStory({
     );
   }
 
-  if (scriptState === 'loaded' && adapterRef.current) {
+  if (scriptState === 'loaded' && providerRef.current) {
     return (
       <AddressInput
-        adapter={adapterRef.current}
+        provider={providerRef.current}
         label="Address (Google Places)"
         placeholder="Start typing a real address…"
         onChange={(address) =>
@@ -211,7 +215,7 @@ const meta: Meta<typeof AddressInput> = {
     docs: {
       description: {
         component:
-          '**Autocomplete only.** This component supports address input via autocomplete from a lookup adapter. An adapter must be provided to supply suggestions; if no adapter is loaded, the field is disabled and shows an error that the adapter must be configured.',
+          '**Autocomplete only.** This component supports address input via autocomplete from a lookup provider. A provider must be provided to supply suggestions; if no provider is loaded, the field is disabled and shows an error that the provider must be configured.',
       },
     },
   },
@@ -223,10 +227,10 @@ const meta: Meta<typeof AddressInput> = {
     ),
   ],
   argTypes: {
-    adapter: {
+    provider: {
       description:
-        'Required. Lookup adapter that provides autocomplete suggestions and address details. Without an adapter the field is disabled and shows an error. Must implement `AddressLookupAdapter` (`getSuggestions`, `getDetails`).',
-      table: { type: { summary: 'AddressLookupAdapter' } },
+        'Required. Lookup provider that provides autocomplete suggestions and address details. Without a provider the field is disabled and shows an error. Must implement `AddressLookupProvider` (`getSuggestions`, `getDetails`).',
+      table: { type: { summary: 'AddressLookupProvider' } },
     },
     onChange: {
       description:
@@ -236,11 +240,11 @@ const meta: Meta<typeof AddressInput> = {
     format: {
       description:
         'Optional formatter; the component uses formatter.toString(address) for display. When omitted, the international formatter is used. E.g. format={australian}. Display-only; does not restrict which addresses can be selected.',
-      table: { type: { summary: 'AddressFormatAdapter' } },
+      table: { type: { summary: 'AddressFormatProvider' } },
     },
     debounce: {
       description:
-        'Milliseconds to debounce before calling `adapter.getSuggestions`. Default: 300.',
+        'Milliseconds to debounce before calling `provider.getSuggestions`. Default: 300.',
       control: { type: 'number', min: 0, max: 2000, step: 50 },
       table: { defaultValue: { summary: '300' } },
     },
@@ -254,17 +258,17 @@ export default meta;
 type Story = StoryObj<typeof AddressInput>;
 
 // --------------------------------------------------------------------------
-// Stories — autocomplete only; adapter required. No adapter → error + disabled.
+// Stories — autocomplete only; provider required. No provider → error + disabled.
 // --------------------------------------------------------------------------
 
 /**
- * Autocomplete with an adapter. The component only supports autocomplete;
- * an adapter must be loaded to provide suggestions.
+ * Autocomplete with a provider. The component only supports autocomplete;
+ * a provider must be loaded to provide suggestions.
  */
 export const Default: Story = {
-  name: 'Autocomplete (adapter provided)',
+  name: 'Autocomplete (provider provided)',
   args: {
-    adapter: mockAdapter,
+    provider: mockProvider,
     label: 'Shipping address',
     placeholder: 'Start typing an address…',
     debounce: 300,
@@ -275,7 +279,7 @@ export const Default: Story = {
 export const WithCustomDebounce: Story = {
   name: 'With Custom Debounce (500ms)',
   args: {
-    adapter: mockAdapter,
+    provider: mockProvider,
     label: 'Address',
     placeholder: 'Slower debounce…',
     debounce: 500,
@@ -285,7 +289,7 @@ export const WithCustomDebounce: Story = {
 export const WithError: Story = {
   name: 'With Error State',
   args: {
-    adapter: mockAdapter,
+    provider: mockProvider,
     label: 'Address',
     placeholder: 'Start typing…',
     error: 'A valid street address is required.',
@@ -293,26 +297,26 @@ export const WithError: Story = {
 };
 
 /**
- * When no adapter is loaded to provide autocomplete, the field is disabled and
- * shows an error that the adapter must be configured. Autocomplete only;
- * adapter required.
+ * When no provider is loaded to provide autocomplete, the field is disabled and
+ * shows an error that the provider must be configured. Autocomplete only;
+ * provider required.
  */
-export const NoAdapterLoaded: Story = {
-  name: 'No adapter loaded (error + disabled)',
+export const NoProviderLoaded: Story = {
+  name: 'No provider loaded (error + disabled)',
   render: () => (
     <AddressInput
-      {...({ adapter: undefined } as unknown as ComponentProps<
+      {...({ provider: undefined } as unknown as ComponentProps<
         typeof AddressInput
       >)}
       label="Address"
-      placeholder="Adapter required"
+      placeholder="Provider required"
     />
   ),
   parameters: {
     docs: {
       description: {
         story:
-          'If no adapter is loaded to provide autocomplete, the field renders disabled with an error. Only autocomplete is supported; an adapter is required.',
+          'If no provider is loaded to provide autocomplete, the field renders disabled with an error. Only autocomplete is supported; a provider is required.',
       },
     },
   },
@@ -330,7 +334,7 @@ function FormattedAddressStory() {
   return (
     <Stack gap="md">
       <AddressInput
-        adapter={mockAdapter}
+        provider={mockProvider}
         label="Address"
         placeholder="Select an address…"
         value={address}
@@ -379,7 +383,7 @@ function FormattersStory() {
           single-line format.
         </Text>
         <AddressInput
-          adapter={mockAdapter}
+          provider={mockProvider}
           label="Address"
           placeholder="Select an address…"
           value={address}
@@ -396,7 +400,7 @@ function FormattersStory() {
           comma-separated.
         </Text>
         <AddressInput
-          adapter={mockAdapter}
+          provider={mockProvider}
           label="Address"
           placeholder="Select an address…"
           value={address}
@@ -442,12 +446,12 @@ function FormattersViaThemeDemo() {
     <MantineProvider theme={theme}>
       <Stack gap="md">
         <AddressInput
-          adapter={mockAdapter}
+          provider={mockProvider}
           value={address}
           onChange={setAddress}
         />
         <AddressInput
-          adapter={mockAdapter}
+          provider={mockProvider}
           value={address}
           onChange={setAddress}
         />
@@ -507,7 +511,7 @@ export const WithThemeDefaultProps: Story = {
     },
   ],
   args: {
-    adapter: mockAdapter,
+    provider: mockProvider,
   },
   parameters: {
     docs: {
@@ -520,16 +524,16 @@ export const WithThemeDefaultProps: Story = {
 };
 
 /**
- * The mock adapter's `getSuggestions` never resolves, so the loading
+ * The mock provider's `getSuggestions` never resolves, so the loading
  * indicator stays visible indefinitely. Useful for inspecting the spinner UI.
  */
 export const LoadingState: Story = {
   name: 'Loading State',
   args: {
-    adapter: {
+    provider: {
       getSuggestions: async () => new Promise<AddressSuggestion[]>(() => {}),
       getDetails: async () => ({}),
-    } satisfies AddressLookupAdapter,
+    } satisfies AddressLookupProvider,
     label: 'Address',
     placeholder: 'Type to see loading spinner…',
     debounce: 0,
@@ -555,13 +559,13 @@ const HIGHLIGHTED_SUGGESTIONS: AddressSuggestion[] = [
 ];
 
 /**
- * The mock adapter returns suggestions with `matchedSubstrings` populated.
+ * The mock provider returns suggestions with `matchedSubstrings` populated.
  * The matched portion of each label ("123 Main") is rendered in bold.
  */
 export const WithHighlightedMatches: Story = {
   name: 'With Highlighted Matches',
   args: {
-    adapter: {
+    provider: {
       getSuggestions: async (input: string) => {
         if (!input) return [];
         await new Promise((r) => setTimeout(r, 150));
@@ -575,7 +579,7 @@ export const WithHighlightedMatches: Story = {
         postcode: '62701',
         country: 'US',
       }),
-    } satisfies AddressLookupAdapter,
+    } satisfies AddressLookupProvider,
     label: 'Address',
     placeholder: 'Type "123 Main" to see highlighted matches…',
     debounce: 300,
@@ -584,20 +588,20 @@ export const WithHighlightedMatches: Story = {
 };
 
 /**
- * The mock adapter always returns an empty array, so the "No results found"
+ * The mock provider always returns an empty array, so the "No results found"
  * message appears in the dropdown after the debounce interval.
  */
 export const NoResults: Story = {
   name: 'No Results',
   args: {
-    adapter: {
+    provider: {
       getSuggestions: async (input: string) => {
         if (!input) return [];
         await new Promise((r) => setTimeout(r, 200));
         return [];
       },
       getDetails: async () => ({}),
-    } satisfies AddressLookupAdapter,
+    } satisfies AddressLookupProvider,
     label: 'Address',
     placeholder: 'Type anything — no results will be returned…',
     debounce: 300,
@@ -616,7 +620,7 @@ function ControlledStory() {
   return (
     <Stack gap="md" style={{ maxWidth: 480 }}>
       <AddressInput
-        adapter={mockAdapter}
+        provider={mockProvider}
         label="Address (controlled)"
         placeholder="Select an address…"
         value={address}
@@ -645,7 +649,7 @@ export const FormControlled: Story = {
 export const FormUncontrolled: Story = {
   name: 'Form / Uncontrolled',
   args: {
-    adapter: mockAdapter,
+    provider: mockProvider,
     label: 'Address (uncontrolled)',
     placeholder: 'Select an address…',
     defaultValue: null,
@@ -683,7 +687,7 @@ function MantineFormStory() {
           onChange={(e) => setName(e.currentTarget.value)}
         />
         <AddressInput
-          adapter={mockAdapter}
+          provider={mockProvider}
           label="Address"
           placeholder="Select an address…"
           value={address}
@@ -726,7 +730,7 @@ function NativeFormStory() {
         }}
       >
         <AddressInput
-          adapter={mockAdapter}
+          provider={mockProvider}
           name="address"
           label="Address"
           placeholder="Select an address…"
@@ -747,8 +751,8 @@ export const FormNativeForm: Story = {
   render: () => <NativeFormStory />,
 };
 
-export const WithGooglePlacesAdapter = {
-  name: 'With Google Places Adapter',
+export const WithGooglePlacesProvider = {
+  name: 'With Google Places Provider',
   render: (args: unknown) => {
     const { apiKey, debounce, label, placeholder } =
       args as GooglePlacesStoryProps;

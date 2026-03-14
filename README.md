@@ -1,6 +1,6 @@
 # mantine-address-input
 
-Mantine plugin providing a reusable **AddressInput** component for [Mantine](https://mantine.dev) apps. **AddressInput** supports **autocomplete only**; **using an adapter is required**. Without an adapter the field is disabled and shows an error. Address lookup is powered by a pluggable adapter (e.g. Google Places or your own backend).
+Mantine plugin providing a reusable **AddressInput** component for [Mantine](https://mantine.dev) apps. **AddressInput** supports **autocomplete only**; **a provider is required**. Without a provider the field is disabled and shows an error. Address lookup is powered by a pluggable provider (e.g. Google Places or your own backend).
 
 ## Install
 
@@ -8,14 +8,14 @@ Mantine plugin providing a reusable **AddressInput** component for [Mantine](htt
 npm install mantine-address @mantine/core react
 ```
 
-## Address model and adapter contract
+## Address model and provider contract
 
-**AddressInput** provides **address autocomplete only** — there is no freeform or manual address entry mode. You **must** configure an `AddressLookupAdapter`; without it, the field renders disabled and shows an error that the adapter must be configured.
+**AddressInput** provides **address autocomplete only** — there is no freeform or manual address entry mode. You **must** configure an `AddressLookupProvider`; without it, the field renders disabled and shows an error that the provider must be configured.
 
-The library uses a **uniform canonical `Address` type** that is region-agnostic: the same shape everywhere regardless of country or provider. All address fields are optional to accommodate varying adapter completeness.
+The library uses a **uniform canonical `Address` type** that is region-agnostic: the same shape everywhere regardless of country or provider. All address fields are optional to accommodate varying provider completeness.
 
-- **Adapters** must implement `AddressLookupAdapter`: `getSuggestions(input)` and `getDetails(id)` returning `Promise<Address>`. Adapters map provider-specific responses (e.g. Google Places) into the canonical `Address` only; no provider types leak into the app.
-- **Formatting** is provided by the **formatter** (`AddressFormatAdapter`). The formatter is responsible for converting an `Address` into text: use `international` or `australian` from the package. Each formatter exposes `toString(address)` (single-line; used by the input for display) and `toEnvelope(address, options?)` (multi-line envelope). How the selected address is **displayed** in the input is controlled by the optional **`format`** prop, e.g. `format={australian}`. When omitted, the international formatter is used. The format is display-only — it does not restrict which addresses can be selected.
+- **Providers** must implement `AddressLookupProvider`: `getSuggestions(input)` and `getDetails(id)` returning `Promise<Address>`. Providers map backend-specific responses (e.g. Google Places) into the canonical `Address` only; no backend types leak into the app.
+- **Formatting** is provided by the **formatter** (`AddressFormatProvider`). The formatter is responsible for converting an `Address` into text: use `international` or `australian` from the package. Each formatter exposes `toString(address)` (single-line; used by the input for display) and `toEnvelope(address, options?)` (multi-line envelope). How the selected address is **displayed** in the input is controlled by the optional **`format`** prop, e.g. `format={australian}`. When omitted, the international formatter is used. The format is display-only — it does not restrict which addresses can be selected.
 
 ### Address type (canonical)
 
@@ -41,7 +41,7 @@ interface Address {
 
 ### Formatters (Address → text)
 
-The **formatter** is responsible for converting an `Address` into text. Use `international` or `australian` from the package; each implements `AddressFormatAdapter`. The component uses **`toString()`** for the input display.
+The **formatter** is responsible for converting an `Address` into text. Use `international` or `australian` from the package; each implements `AddressFormatProvider`. The component uses **`toString()`** for the input display.
 
 - **`formatter.toString(address)`** — single-line full address (street, suburb, state, postcode, country). Used by AddressInput for display.
 - **`formatter.toEnvelope(address, options?)`** — multi-line envelope format; `options.uppercase` for postal style.
@@ -56,7 +56,7 @@ If you previously used `AddressDetails` (flat `streetAddress`, `city`, `state`, 
 
 ### AddressInput with Google Places
 
-`AddressInput` wraps Mantine's `Autocomplete` and delegates address lookup to an adapter. **An adapter is required** — the component only supports autocomplete from the adapter's suggestions. Without an adapter the field is disabled and shows an error. The built-in `GooglePlacesAdapter` uses the Google Places API and returns the canonical `Address`.
+`AddressInput` wraps Mantine's `Autocomplete` and delegates address lookup to a provider. **A provider is required** — the component only supports autocomplete from the provider's suggestions. Without a provider the field is disabled and shows an error. The built-in `GooglePlacesProvider` uses the Google Places API and returns the canonical `Address`.
 
 **1. Load the Google Maps script in your HTML** (before your app bundle):
 
@@ -75,16 +75,16 @@ If you previously used `AddressDetails` (flat `streetAddress`, `city`, `state`, 
 ```tsx
 import { useState } from 'react';
 import type { Address } from 'mantine-address';
-import { AddressInput, GooglePlacesAdapter } from 'mantine-address';
+import { AddressInput, GooglePlacesProvider } from 'mantine-address';
 
-const adapter = new GooglePlacesAdapter({ apiKey: 'YOUR_GOOGLE_API_KEY' });
+const provider = new GooglePlacesProvider({ apiKey: 'YOUR_GOOGLE_API_KEY' });
 
 function ShippingForm() {
   const [address, setAddress] = useState<Address | null>(null);
 
   return (
     <AddressInput
-      adapter={adapter}
+      provider={provider}
       label="Shipping address"
       placeholder="Start typing an address…"
       value={address}
@@ -94,18 +94,18 @@ function ShippingForm() {
 }
 ```
 
-### Custom adapter
+### Custom provider
 
-Any object that satisfies `AddressLookupAdapter` works. Adapters must map provider data into the **uniform `Address` type** only:
+Any object that satisfies `AddressLookupProvider` works. Providers must map backend data into the **uniform `Address` type** only:
 
 ```tsx
 import type {
   Address,
-  AddressLookupAdapter,
+  AddressLookupProvider,
   AddressSuggestion,
 } from 'mantine-address';
 
-const myAdapter: AddressLookupAdapter = {
+const myProvider: AddressLookupProvider = {
   async getSuggestions(input: string): Promise<AddressSuggestion[]> {
     const results = await myAddressApi.autocomplete(input);
     return results.map((r) => ({
@@ -130,7 +130,7 @@ const myAdapter: AddressLookupAdapter = {
   },
 };
 
-<AddressInput adapter={myAdapter} label="Address" />;
+<AddressInput provider={myProvider} label="Address" />;
 ```
 
 #### `matchedSubstrings` — highlight what the user typed
@@ -145,7 +145,7 @@ interface AddressSuggestion {
 }
 ```
 
-When present, `AddressInput` renders the matching portions of each suggestion label in **bold** inside the dropdown. Adapters that don't have this data can simply omit the field — the label renders as plain text. The built-in `GooglePlacesAdapter` populates this automatically from the Google Places API response.
+When present, `AddressInput` renders the matching portions of each suggestion label in **bold** inside the dropdown. Providers that don't have this data can simply omit the field — the label renders as plain text. The built-in `GooglePlacesProvider` populates this automatically from the Google Places API response.
 
 ### Form support (controlled, uncontrolled, native forms)
 
@@ -164,14 +164,14 @@ Storybook includes **Form / Controlled**, **Form / Uncontrolled**, **Form / With
 
 | Prop                               | Type                                 | Default              | Description                                                                                                                                                               |
 | ---------------------------------- | ------------------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `adapter`                          | `AddressLookupAdapter`               | required             | Lookup service adapter (returns canonical `Address` from `getDetails`). If missing at runtime, the field is disabled and shows an error.                                  |
+| `provider`                         | `AddressLookupProvider`              | required             | Lookup service provider (returns canonical `Address` from `getDetails`). If missing at runtime, the field is disabled and shows an error.                                 |
 | `value`                            | `Address \| null`                    | —                    | Selected address (controlled). When undefined, component is uncontrolled.                                                                                                 |
 | `defaultValue`                     | `Address \| null`                    | —                    | Initial address when uncontrolled.                                                                                                                                        |
 | `onChange`                         | `(address: Address \| null) => void` | —                    | Called when the user selects an address or clears the field.                                                                                                              |
-| `format`                           | `AddressFormatAdapter`               | international        | Optional. How the selected address is displayed. E.g. `format={australian}` or `format={international}`. Display-only; does not restrict which addresses can be selected. |
+| `format`                           | `AddressFormatProvider`              | international        | Optional. How the selected address is displayed. E.g. `format={australian}` or `format={international}`. Display-only; does not restrict which addresses can be selected. |
 | `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`).                                                                |
 | `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                                                                                      |
-| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the adapter returns an empty array for a non-empty query                                                                               |
+| `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the provider returns an empty array for a non-empty query                                                                              |
 | + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                                                                                        |
 
 The component’s ref type is `AddressInputRef` (extends `HTMLInputElement` with `reset(): void`). Use the ref for focus and to call `reset()` when uncontrolled.
@@ -182,10 +182,10 @@ The component’s ref type is `AddressInputRef` (extends `HTMLInputElement` with
 
 #### Built-in UX behaviors
 
-- **Adapter required** — if the component is rendered without a valid adapter (e.g. `undefined` or `null` at runtime), the input is **disabled** and displays an error message that the adapter must be configured. No lookup or selection occurs.
+- **Provider required** — if the component is rendered without a valid provider (e.g. `undefined` or `null` at runtime), the input is **disabled** and displays an error message that the provider must be configured. No lookup or selection occurs.
 - **Loading indicator** — a spinner appears inside the input while `getSuggestions` is in flight. Provide a `rightSection` prop to replace it with your own element.
 - **Match highlighting** — when an `AddressSuggestion` includes `matchedSubstrings`, the matched portion of the label is rendered in bold in the dropdown.
-- **No-results message** — when the adapter returns `[]` for a non-empty query and no request is in flight, `nothingFoundMessage` is shown in the dropdown.
+- **No-results message** — when the provider returns `[]` for a non-empty query and no request is in flight, `nothingFoundMessage` is shown in the dropdown.
 
 See [Storybook](https://bradley-r-martin.github.io/mantine-address/) for live examples (published on releases).
 

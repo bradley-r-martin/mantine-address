@@ -1,11 +1,11 @@
 export { AddressInput } from './AddressInput';
 export type { AddressInputProps, AddressInputRef } from './AddressInput';
 
-export { GooglePlacesAdapter } from './adapters/GooglePlacesAdapter';
+export { GooglePlacesProvider } from './providers/GooglePlacesProvider';
 
 export { international, australian } from './formatters';
 export type {
-  AddressFormatAdapter,
+  AddressFormatProvider,
   AddressToEnvelopeOptions,
 } from './formatters';
 
@@ -13,5 +13,5 @@ export type {
   Address,
   AddressSuggestion,
   AddressDetails,
-  AddressLookupAdapter,
+  AddressLookupProvider,
 } from './types';

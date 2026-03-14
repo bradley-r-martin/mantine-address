@@ -8,8 +8,12 @@ import {
   type ComboboxItem,
 } from '@mantine/core';
 import type { Factory } from '@mantine/core';
-import type { Address, AddressLookupAdapter, AddressSuggestion } from './types';
-import { international, type AddressFormatAdapter } from './formatters';
+import type {
+  Address,
+  AddressLookupProvider,
+  AddressSuggestion,
+} from './types';
+import { international, type AddressFormatProvider } from './formatters';
 
 /** Keys of Address that are serialized as hidden form inputs, in stable order. */
 const ADDRESS_FORM_KEYS: (keyof Address)[] = [
@@ -33,16 +37,16 @@ const ADDRESS_FORM_KEYS: (keyof Address)[] = [
 /** Sentinel value used to render the "no results" row inside the dropdown. */
 const NO_RESULTS_VALUE = '__mantine-address-no-results__';
 
-/** Message shown when the component is rendered without a valid adapter. */
-const ADAPTER_REQUIRED_MESSAGE =
-  'Address autocomplete requires an adapter to be configured';
+/** Message shown when the component is rendered without a valid provider. */
+const PROVIDER_REQUIRED_MESSAGE =
+  'Address autocomplete requires a provider to be configured';
 
 export interface AddressInputProps extends Omit<
   AutocompleteProps,
   'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
 > {
-  /** Lookup adapter that provides address suggestions and details. */
-  adapter: AddressLookupAdapter;
+  /** Lookup provider that provides address suggestions and details. */
+  provider: AddressLookupProvider;
   /**
    * The selected address (controlled). When undefined, component is uncontrolled and uses defaultValue.
    */
@@ -56,7 +60,7 @@ export interface AddressInputProps extends Omit<
    * formatter.toString(address). When omitted, the international formatter is used. E.g. format={australian}.
    * Display-only: does not restrict which addresses can be selected.
    */
-  format?: AddressFormatAdapter;
+  format?: AddressFormatProvider;
   /**
    * Name for native form participation. When set, hidden inputs are rendered for each defined
    * address field under `{name}[field]` (e.g. name="address" → address[suburb], address[postcode]).
@@ -65,7 +69,7 @@ export interface AddressInputProps extends Omit<
   /** Debounce delay in milliseconds before fetching suggestions. Defaults to 300. */
   debounce?: number;
   /**
-   * Message displayed in the dropdown when the adapter returns no suggestions
+   * Message displayed in the dropdown when the provider returns no suggestions
    * for a non-empty query. Defaults to `"No results found"`.
    */
   nothingFoundMessage?: React.ReactNode;
@@ -146,7 +150,7 @@ function renderHiddenInputs(
 export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const props = useProps('AddressInput', defaultProps, _props);
   const {
-    adapter,
+    provider,
     format: formatProp,
     debounce: debounceMs,
     value: valueProp,
@@ -158,7 +162,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     ...rest
   } = props;
 
-  const formatAdapter = formatProp ?? international;
+  const formatProvider = formatProp ?? international;
 
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -193,7 +197,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const address = isControlled ? (valueProp ?? null) : uncontrolledAddress;
 
   const displayValue =
-    address != null ? formatAdapter.toString(address) : typedInput;
+    address != null ? formatProvider.toString(address) : typedInput;
 
   useEffect(() => {
     if (isControlled && valueProp == null) setTypedInput('');
@@ -223,7 +227,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       const currentId = ++requestIdRef.current;
       setIsLoading(true);
 
-      adapter
+      provider
         .getSuggestions(value)
         .then((results) => {
           if (requestIdRef.current !== currentId) return;
@@ -244,10 +248,10 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     const suggestion = suggestions.find((s) => s.label === label);
     if (!suggestion) return;
 
-    adapter
+    provider
       .getDetails(suggestion.id)
       .then((address) => {
-        const formatted = formatAdapter.toString(address);
+        const formatted = formatProvider.toString(address);
         setTypedInput(formatted);
         if (!isControlled) setUncontrolledAddress(address);
         onChange?.(address);
@@ -260,7 +264,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     ? [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
     : suggestions.map((s) => s.label);
 
-  if (adapter == null) {
+  if (provider == null) {
     return (
       <>
         {nameProp ? renderHiddenInputs(nameProp, address) : null}
@@ -271,7 +275,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
           onChange={() => {}}
           onOptionSubmit={() => {}}
           disabled
-          error={ADAPTER_REQUIRED_MESSAGE}
+          error={PROVIDER_REQUIRED_MESSAGE}
           {...rest}
         />
       </>
