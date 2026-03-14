@@ -7,16 +7,20 @@ import {
   Title,
   Divider,
 } from '@mantine/core';
-import {
-  addressToString,
-  addressToStreetString,
-  addressToEnvelopeString,
-} from './formatAddress';
+import { international } from './formatters';
 import type { Address } from './types';
 
 const meta: Meta = {
   title: 'Address Formatting',
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'The **formatter** is responsible for converting an Address into text. Use `international` or `australian` from the formatters module; each provides `toString()` and `toEnvelope()`.',
+      },
+    },
+  },
   decorators: [
     (Story) => (
       <MantineProvider>
@@ -37,10 +41,9 @@ function FormattingDemo({
   address: Address;
   label: string;
 }) {
-  const street = addressToStreetString(address);
-  const single = addressToString(address);
-  const envelope = addressToEnvelopeString(address);
-  const envelopeUpper = addressToEnvelopeString(address, { uppercase: true });
+  const single = international.toString(address);
+  const envelope = international.toEnvelope(address);
+  const envelopeUpper = international.toEnvelope(address, { uppercase: true });
 
   return (
     <Stack gap="md">
@@ -49,25 +52,19 @@ function FormattingDemo({
       </Text>
       <Stack gap="xs">
         <Text size="sm" fw={600}>
-          addressToStreetString
-        </Text>
-        <Code block>{street || '(empty)'}</Code>
-      </Stack>
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>
-          addressToString
+          formatter.toString(address)
         </Text>
         <Code block>{single || '(empty)'}</Code>
       </Stack>
       <Stack gap="xs">
         <Text size="sm" fw={600}>
-          addressToEnvelopeString
+          formatter.toEnvelope(address)
         </Text>
         <Code block>{envelope || '(empty)'}</Code>
       </Stack>
       <Stack gap="xs">
         <Text size="sm" fw={600}>
-          addressToEnvelopeString(..., {'{ uppercase: true }'})
+          formatter.toEnvelope(address, {'{ uppercase: true }'})
         </Text>
         <Code block>{envelopeUpper || '(empty)'}</Code>
       </Stack>
@@ -173,8 +170,8 @@ export const AllVariants: Story = {
     <Stack gap="xl">
       <Title order={3}>Address formatting utilities</Title>
       <Text size="sm" c="dimmed">
-        addressToString, addressToStreetString, and addressToEnvelopeString
-        operate on the uniform Address type. Optional fields are omitted.
+        The formatter (e.g. international) provides toString() and toEnvelope()
+        and operates on the uniform Address type. Optional fields are omitted.
       </Text>
       <Divider />
       <FormattingDemo address={fullAddress} label="Full (AU)" />
