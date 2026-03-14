@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import type {
@@ -149,7 +149,9 @@ describe('AddressInput', () => {
       expect(screen.getByText('Enter address')).toBeInTheDocument();
 
       const streetNameInput = screen.getByLabelText('Street name');
-      const saveButton = screen.getByRole('button', { name: /save/i });
+      const saveButton = screen.getByRole('button', {
+        name: /use manual address/i,
+      });
 
       await act(async () => {
         fireEvent.change(streetNameInput, { target: { value: '1 Main St' } });
@@ -266,6 +268,47 @@ describe('AddressInput', () => {
       ).not.toBeInTheDocument();
     });
 
+    it('manual modal form is laid out in a grid with fields in spec order', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      expect(
+        modal.querySelector('[class*="mantine-Grid"]')
+      ).toBeInTheDocument();
+      const expectedLabels = [
+        'Unit',
+        'Lot no',
+        'Level',
+        'Building name',
+        'Street number',
+        'Street name',
+        'Street type',
+        'Street suffix',
+        'Suburb',
+        'Postcode',
+        'State / Province',
+        'Country',
+      ];
+      expectedLabels.forEach((label) => {
+        expect(within(modal).getByLabelText(label)).toBeInTheDocument();
+      });
+    });
+
     it('manual submit produces Address with filled fields only (no place_id, latitude, longitude)', async () => {
       const onChange = vi.fn();
       render(
@@ -322,7 +365,9 @@ describe('AddressInput', () => {
         });
       });
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: /save/i }));
+        fireEvent.click(
+          screen.getByRole('button', { name: /use manual address/i })
+        );
       });
       await act(async () => {
         vi.advanceTimersByTime(250);
