@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { GooglePlacesAdapter } from './GooglePlacesAdapter';
+import { GooglePlacesProvider } from './GooglePlacesProvider';
 
 type GoogleMock = {
   maps: {
@@ -40,7 +40,7 @@ function removeGoogle(): void {
   delete (window as Window & { google?: unknown }).google;
 }
 
-describe('GooglePlacesAdapter', () => {
+describe('GooglePlacesProvider', () => {
   afterEach(() => {
     removeGoogle();
     vi.restoreAllMocks();
@@ -48,9 +48,9 @@ describe('GooglePlacesAdapter', () => {
 
   describe('constructor', () => {
     it('creates an instance with an apiKey', () => {
-      const adapter = new GooglePlacesAdapter({ apiKey: 'MY_KEY' });
-      expect(adapter).toBeInstanceOf(GooglePlacesAdapter);
-      expect(adapter.apiKey).toBe('MY_KEY');
+      const provider = new GooglePlacesProvider({ apiKey: 'MY_KEY' });
+      expect(provider).toBeInstanceOf(GooglePlacesProvider);
+      expect(provider.apiKey).toBe('MY_KEY');
     });
   });
 
@@ -72,8 +72,8 @@ describe('GooglePlacesAdapter', () => {
         }
       );
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      const results = await adapter.getSuggestions('123 Main');
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      const results = await provider.getSuggestions('123 Main');
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual({
@@ -108,8 +108,8 @@ describe('GooglePlacesAdapter', () => {
         }
       );
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      const results = await adapter.getSuggestions('123 Main');
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      const results = await provider.getSuggestions('123 Main');
 
       expect(results).toHaveLength(1);
       expect(results[0].matchedSubstrings).toEqual([
@@ -126,8 +126,8 @@ describe('GooglePlacesAdapter', () => {
         }
       );
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      const results = await adapter.getSuggestions('zzzznonexistent');
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      const results = await provider.getSuggestions('zzzznonexistent');
 
       expect(results).toEqual([]);
     });
@@ -140,8 +140,8 @@ describe('GooglePlacesAdapter', () => {
         }
       );
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      await expect(adapter.getSuggestions('test')).rejects.toThrow(
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      await expect(provider.getSuggestions('test')).rejects.toThrow(
         'REQUEST_DENIED'
       );
     });
@@ -149,8 +149,8 @@ describe('GooglePlacesAdapter', () => {
     it('returns empty array for empty input without calling API', async () => {
       setupGoogleMock();
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      const results = await adapter.getSuggestions('');
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      const results = await provider.getSuggestions('');
 
       expect(results).toEqual([]);
     });
@@ -158,8 +158,8 @@ describe('GooglePlacesAdapter', () => {
     it('throws when google is not loaded', async () => {
       removeGoogle();
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      await expect(adapter.getSuggestions('test')).rejects.toThrow(
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      await expect(provider.getSuggestions('test')).rejects.toThrow(
         'Google Maps JavaScript API is not loaded'
       );
     });
@@ -202,8 +202,8 @@ describe('GooglePlacesAdapter', () => {
         }
       );
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      const address = await adapter.getDetails('place1');
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      const address = await provider.getDetails('place1');
 
       expect(address).toEqual({
         place_id: 'place1',
@@ -231,15 +231,15 @@ describe('GooglePlacesAdapter', () => {
         }
       );
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      await expect(adapter.getDetails('bad_id')).rejects.toThrow('NOT_FOUND');
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      await expect(provider.getDetails('bad_id')).rejects.toThrow('NOT_FOUND');
     });
 
     it('throws when google is not loaded', async () => {
       removeGoogle();
 
-      const adapter = new GooglePlacesAdapter({ apiKey: 'KEY' });
-      await expect(adapter.getDetails('place1')).rejects.toThrow(
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      await expect(provider.getDetails('place1')).rejects.toThrow(
         'Google Maps JavaScript API is not loaded'
       );
     });

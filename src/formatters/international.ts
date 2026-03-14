@@ -1,5 +1,5 @@
 import type { Address } from '../types';
-import type { AddressFormatAdapter, AddressToEnvelopeOptions } from './types';
+import type { AddressFormatProvider, AddressToEnvelopeOptions } from './types';
 import { buildStreetLine, nonEmpty, joinParts } from './utilities';
 
 function toString(address: Address): string {
@@ -33,7 +33,7 @@ function toEnvelope(
  * International formatter: single-line and envelope conventions (street, then locality
  * with suburb, state, postcode, country).
  */
-export const international: AddressFormatAdapter = {
+export const international: AddressFormatProvider = {
   toString,
   toEnvelope,
 };

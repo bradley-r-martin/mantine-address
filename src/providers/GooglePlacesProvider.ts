@@ -1,10 +1,10 @@
 import type {
   Address,
-  AddressLookupAdapter,
+  AddressLookupProvider,
   AddressSuggestion,
 } from '../types';
 
-export interface GooglePlacesAdapterOptions {
+export interface GooglePlacesProviderOptions {
   apiKey: string;
 }
 
@@ -15,8 +15,8 @@ function assertGoogleMapsLoaded(): void {
       ?.maps?.places
   ) {
     throw new Error(
-      '[GooglePlacesAdapter] Google Maps JavaScript API is not loaded. ' +
-        'Add the following script to your HTML before using this adapter:\n' +
+      '[GooglePlacesProvider] Google Maps JavaScript API is not loaded. ' +
+        'Add the following script to your HTML before using this provider:\n' +
         '<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY&libraries=places"></script>'
     );
   }
@@ -49,10 +49,10 @@ function mapAddressComponents(
   return address;
 }
 
-export class GooglePlacesAdapter implements AddressLookupAdapter {
+export class GooglePlacesProvider implements AddressLookupProvider {
   readonly apiKey: string;
 
-  constructor({ apiKey }: GooglePlacesAdapterOptions) {
+  constructor({ apiKey }: GooglePlacesProviderOptions) {
     this.apiKey = apiKey;
   }
 
@@ -76,7 +76,7 @@ export class GooglePlacesAdapter implements AddressLookupAdapter {
             !predictions
           ) {
             reject(
-              new Error(`[GooglePlacesAdapter] Autocomplete error: ${status}`)
+              new Error(`[GooglePlacesProvider] Autocomplete error: ${status}`)
             );
             return;
           }
@@ -113,7 +113,7 @@ export class GooglePlacesAdapter implements AddressLookupAdapter {
             !result?.address_components
           ) {
             reject(
-              new Error(`[GooglePlacesAdapter] Place Details error: ${status}`)
+              new Error(`[GooglePlacesProvider] Place Details error: ${status}`)
             );
             return;
           }

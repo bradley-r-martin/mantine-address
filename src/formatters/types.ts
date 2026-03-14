@@ -7,10 +7,10 @@ export interface AddressToEnvelopeOptions {
 }
 
 /**
- * Adapter for converting an Address into text. AddressInput uses toString() for display.
+ * Provider for converting an Address into text. AddressInput uses toString() for display.
  * Display-only: does not restrict which addresses can be selected.
  */
-export interface AddressFormatAdapter {
+export interface AddressFormatProvider {
   /** Single-line full address string. Used by AddressInput for display. */
   toString(address: Address): string;
   /** Multi-line envelope format (street line, locality line, country). */

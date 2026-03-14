@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider, createTheme } from '@mantine/core';
 import { AddressInput } from './AddressInput';
-import type { AddressLookupAdapter, AddressSuggestion } from './types';
+import type { AddressLookupProvider, AddressSuggestion } from './types';
 
 describe('MantineProvider defaultProps (factory / useProps)', () => {
   describe('AddressInput', () => {
@@ -15,8 +15,8 @@ describe('MantineProvider defaultProps (factory / useProps)', () => {
       vi.restoreAllMocks();
     });
 
-    it('uses theme defaultProps for nothingFoundMessage when adapter returns empty', async () => {
-      const emptyAdapter: AddressLookupAdapter = {
+    it('uses theme defaultProps for nothingFoundMessage when provider returns empty', async () => {
+      const emptyProvider: AddressLookupProvider = {
         getSuggestions: vi.fn().mockResolvedValue([] as AddressSuggestion[]),
         getDetails: vi.fn().mockResolvedValue({}),
       };
@@ -29,7 +29,7 @@ describe('MantineProvider defaultProps (factory / useProps)', () => {
       });
       render(
         <MantineProvider theme={theme}>
-          <AddressInput adapter={emptyAdapter} />
+          <AddressInput provider={emptyProvider} />
         </MantineProvider>
       );
       fireEvent.change(screen.getByRole('textbox'), {
@@ -43,7 +43,7 @@ describe('MantineProvider defaultProps (factory / useProps)', () => {
     });
 
     it('explicit props override theme defaultProps', async () => {
-      const emptyAdapter: AddressLookupAdapter = {
+      const emptyProvider: AddressLookupProvider = {
         getSuggestions: vi.fn().mockResolvedValue([] as AddressSuggestion[]),
         getDetails: vi.fn().mockResolvedValue({}),
       };
@@ -57,7 +57,7 @@ describe('MantineProvider defaultProps (factory / useProps)', () => {
       render(
         <MantineProvider theme={theme}>
           <AddressInput
-            adapter={emptyAdapter}
+            provider={emptyProvider}
             nothingFoundMessage="From props"
           />
         </MantineProvider>
@@ -73,13 +73,13 @@ describe('MantineProvider defaultProps (factory / useProps)', () => {
     });
 
     it('uses component-level defaults when theme does not set AddressInput', async () => {
-      const emptyAdapter: AddressLookupAdapter = {
+      const emptyProvider: AddressLookupProvider = {
         getSuggestions: vi.fn().mockResolvedValue([] as AddressSuggestion[]),
         getDetails: vi.fn().mockResolvedValue({}),
       };
       render(
         <MantineProvider>
-          <AddressInput adapter={emptyAdapter} />
+          <AddressInput provider={emptyProvider} />
         </MantineProvider>
       );
       fireEvent.change(screen.getByRole('textbox'), {

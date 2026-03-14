@@ -1,7 +1,7 @@
 import { describe, it, expectTypeOf } from 'vitest';
 import type {
   Address,
-  AddressLookupAdapter,
+  AddressLookupProvider,
   AddressSuggestion,
   AddressDetails,
 } from './types';
@@ -32,9 +32,9 @@ describe('Address type', () => {
   });
 });
 
-describe('AddressLookupAdapter type', () => {
+describe('AddressLookupProvider type', () => {
   it('accepts a plain object implementing the interface', () => {
-    const mockAdapter = {
+    const mockProvider = {
       getSuggestions: (): Promise<AddressSuggestion[]> =>
         Promise.resolve([{ id: 'id1', label: 'label1' }]),
       getDetails: (): Promise<Address> =>
@@ -49,7 +49,7 @@ describe('AddressLookupAdapter type', () => {
         }),
     };
 
-    expectTypeOf(mockAdapter).toMatchTypeOf<AddressLookupAdapter>();
+    expectTypeOf(mockProvider).toMatchTypeOf<AddressLookupProvider>();
   });
 
   it('AddressSuggestion has id and label', () => {
