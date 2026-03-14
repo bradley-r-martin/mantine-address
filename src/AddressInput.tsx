@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect, useImperativeHandle } from 'react';
 import {
   Autocomplete,
+  Button,
   Loader,
+  Modal,
+  Stack,
+  TextInput,
   factory,
   useProps,
   type AutocompleteProps,
@@ -37,6 +41,9 @@ const ADDRESS_FORM_KEYS: (keyof Address)[] = [
 /** Sentinel value used to render the "no results" row inside the dropdown. */
 const NO_RESULTS_VALUE = '__mantine-address-no-results__';
 
+/** Value for the "Enter manually" dropdown option when allowsManualEntry is true. */
+const ENTER_MANUALLY_VALUE = '__mantine-address-enter-manually__';
+
 /** Message shown when the component is rendered without a valid provider. */
 const PROVIDER_REQUIRED_MESSAGE =
   'Address autocomplete requires a provider to be configured';
@@ -45,8 +52,12 @@ export interface AddressInputProps extends Omit<
   AutocompleteProps,
   'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
 > {
-  /** Lookup provider that provides address suggestions and details. */
-  provider: AddressLookupProvider;
+  /** Lookup provider that provides address suggestions and details. Optional when allowsManualEntry is true. */
+  provider?: AddressLookupProvider | null;
+  /**
+   * When true (default), allow setting an address via a manual-entry modal when the provider returns no results or when no provider is supplied. When false, provider is required and no manual option is shown.
+   */
+  allowsManualEntry?: boolean;
   /**
    * The selected address (controlled). When undefined, component is uncontrolled and uses defaultValue.
    */
@@ -89,6 +100,7 @@ const defaultProps = {
   debounce: 300,
   nothingFoundMessage: 'No results found',
   format: international,
+  allowsManualEntry: true,
 } satisfies Partial<AddressInputProps>;
 
 function highlightLabel(
@@ -151,6 +163,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const props = useProps('AddressInput', defaultProps, _props);
   const {
     provider,
+    allowsManualEntry,
     format: formatProp,
     debounce: debounceMs,
     value: valueProp,
@@ -169,9 +182,58 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const [typedInput, setTypedInput] = useState('');
   const [uncontrolledAddress, setUncontrolledAddress] =
     useState<Address | null>(() => defaultValue ?? null);
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [manualFormStreet, setManualFormStreet] = useState('');
+  const [manualFormSuburb, setManualFormSuburb] = useState('');
+  const [manualFormState, setManualFormState] = useState('');
+  const [manualFormPostcode, setManualFormPostcode] = useState('');
+  const [manualFormCountry, setManualFormCountry] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** When true, the next focus/click open is ignored (modal just closed and returnFocus refocused the input). */
+  const manualModalJustClosedRef = useRef(false);
+
+  const openManualModal = (initialStreet?: string) => {
+    if (initialStreet != null) {
+      setManualFormStreet(initialStreet);
+    } else {
+      setManualFormStreet('');
+    }
+    setManualFormSuburb('');
+    setManualFormState('');
+    setManualFormPostcode('');
+    setManualFormCountry('');
+    setManualModalOpen(true);
+  };
+
+  const closeManualModal = () => {
+    manualModalJustClosedRef.current = true;
+    setManualModalOpen(false);
+  };
+
+  const handleOpenManualModalNoProvider = () => {
+    if (manualModalJustClosedRef.current) {
+      manualModalJustClosedRef.current = false;
+      return;
+    }
+    openManualModal();
+  };
+
+  const handleManualSubmit = () => {
+    const address: Address = {};
+    if (manualFormStreet.trim()) {
+      address.street_name = manualFormStreet.trim();
+    }
+    if (manualFormSuburb.trim()) address.suburb = manualFormSuburb.trim();
+    if (manualFormState.trim()) address.state = manualFormState.trim();
+    if (manualFormPostcode.trim()) address.postcode = manualFormPostcode.trim();
+    if (manualFormCountry.trim()) address.country = manualFormCountry.trim();
+    setTypedInput(formatProvider.toString(address));
+    if (!isControlled) setUncontrolledAddress(address);
+    onChange?.(address);
+    closeManualModal();
+  };
 
   const reset = () => {
     setTypedInput('');
@@ -207,6 +269,10 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     !isLoading && typedInput.length > 0 && suggestions.length === 0;
 
   const handleChange = (value: string) => {
+    // Prevent the "Enter manually" option from overwriting the input with its label.
+    if (value === 'Enter manually' || value === ENTER_MANUALLY_VALUE) {
+      return;
+    }
     setTypedInput(value);
     if (!isControlled) setUncontrolledAddress(null);
     onChange?.(null);
@@ -223,30 +289,36 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       return;
     }
 
-    timerRef.current = setTimeout(() => {
-      const currentId = ++requestIdRef.current;
-      setIsLoading(true);
+    if (provider) {
+      timerRef.current = setTimeout(() => {
+        const currentId = ++requestIdRef.current;
+        setIsLoading(true);
 
-      provider
-        .getSuggestions(value)
-        .then((results) => {
-          if (requestIdRef.current !== currentId) return;
-          setSuggestions(results);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          if (requestIdRef.current !== currentId) return;
-          setSuggestions([]);
-          setIsLoading(false);
-        });
-    }, debounceMs);
+        provider
+          .getSuggestions(value)
+          .then((results) => {
+            if (requestIdRef.current !== currentId) return;
+            setSuggestions(results);
+            setIsLoading(false);
+          })
+          .catch(() => {
+            if (requestIdRef.current !== currentId) return;
+            setSuggestions([]);
+            setIsLoading(false);
+          });
+      }, debounceMs);
+    }
   };
 
   const handleOptionSubmit = (label: string) => {
     if (label === NO_RESULTS_VALUE) return;
+    if (label === ENTER_MANUALLY_VALUE) {
+      openManualModal(typedInput);
+      return;
+    }
 
     const suggestion = suggestions.find((s) => s.label === label);
-    if (!suggestion) return;
+    if (!suggestion || !provider) return;
 
     provider
       .getDetails(suggestion.id)
@@ -259,12 +331,64 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       .catch(() => {});
   };
 
-  // When no results, add a disabled sentinel item so the dropdown stays open and shows the message.
+  // When no results: show disabled no-results message; when allowsManualEntry also show selectable "Enter manually".
   const data: (string | ComboboxItem)[] = showNoResults
-    ? [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
+    ? allowsManualEntry
+      ? [
+          { value: NO_RESULTS_VALUE, label: '', disabled: true },
+          { value: ENTER_MANUALLY_VALUE, label: 'Enter manually' },
+        ]
+      : [{ value: NO_RESULTS_VALUE, label: '', disabled: true }]
     : suggestions.map((s) => s.label);
 
+  const manualModal = (
+    <Modal
+      title="Enter address"
+      opened={manualModalOpen}
+      onClose={closeManualModal}
+      centered
+    >
+      <Stack gap="md">
+        <TextInput
+          label="Street"
+          placeholder="Street address"
+          value={manualFormStreet}
+          onChange={(e) => setManualFormStreet(e.currentTarget.value)}
+        />
+        <TextInput
+          label="Suburb"
+          placeholder="Suburb / City"
+          value={manualFormSuburb}
+          onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
+        />
+        <TextInput
+          label="State / Province"
+          placeholder="State or province"
+          value={manualFormState}
+          onChange={(e) => setManualFormState(e.currentTarget.value)}
+        />
+        <TextInput
+          label="Postcode"
+          placeholder="Postcode"
+          value={manualFormPostcode}
+          onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
+        />
+        <TextInput
+          label="Country"
+          placeholder="Country"
+          value={manualFormCountry}
+          onChange={(e) => setManualFormCountry(e.currentTarget.value)}
+        />
+        <Button onClick={handleManualSubmit}>Save</Button>
+        <Button variant="default" onClick={closeManualModal}>
+          Cancel
+        </Button>
+      </Stack>
+    </Modal>
+  );
+
   if (provider == null) {
+    const noProviderAllowsManual = allowsManualEntry === true;
     return (
       <>
         {nameProp ? renderHiddenInputs(nameProp, address) : null}
@@ -274,10 +398,18 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
           value={displayValue}
           onChange={() => {}}
           onOptionSubmit={() => {}}
-          disabled
-          error={PROVIDER_REQUIRED_MESSAGE}
+          disabled={!noProviderAllowsManual}
+          error={noProviderAllowsManual ? undefined : PROVIDER_REQUIRED_MESSAGE}
+          onFocus={
+            noProviderAllowsManual ? handleOpenManualModalNoProvider : undefined
+          }
+          onClick={
+            noProviderAllowsManual ? handleOpenManualModalNoProvider : undefined
+          }
+          readOnly={noProviderAllowsManual}
           {...rest}
         />
+        {manualModal}
       </>
     );
   }
@@ -312,12 +444,16 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
               </span>
             );
           }
+          if (option.value === ENTER_MANUALLY_VALUE) {
+            return <span>Enter manually</span>;
+          }
           const suggestion = suggestions.find((s) => s.label === option.value);
           return highlightLabel(option.value, suggestion?.matchedSubstrings);
         }}
         filter={({ options }) => options}
         {...rest}
       />
+      {manualModal}
     </>
   );
 });
