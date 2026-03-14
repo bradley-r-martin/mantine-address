@@ -597,7 +597,10 @@ export const NoResults: Story = {
 
 /**
  * When no provider is supplied, the component is manual-only: the input is
- * enabled and click or focus opens the manual-entry modal.
+ * enabled and click or focus opens the manual-entry modal. The modal includes
+ * all Address fields: building name, level, unit, lot no, street number,
+ * street name, street type, street suffix, suburb, state, postcode, country
+ * (no place_id, latitude, or longitude).
  */
 export const ManualEntryNoProvider: Story = {
   name: 'Manual entry / No provider (click opens modal)',
@@ -605,7 +608,8 @@ export const ManualEntryNoProvider: Story = {
     <Stack gap="xs" style={{ maxWidth: 480 }}>
       <Text size="sm" c="dimmed">
         No provider — manual-only. Click the input to open the manual-entry
-        modal.
+        modal with all address fields (building, level, unit, street, suburb,
+        state, postcode, country).
       </Text>
       <AddressInput
         {...({ provider: null } as unknown as ComponentProps<
@@ -621,7 +625,7 @@ export const ManualEntryNoProvider: Story = {
     docs: {
       description: {
         story:
-          'With no provider, the component runs in manual-only mode: the input is enabled and clicking or focusing opens the manual-entry modal.',
+          'With no provider, the component runs in manual-only mode: the input is enabled and clicking or focusing opens the manual-entry modal. The modal form includes all Address fields (building name, level, unit, lot no, street number, street name, street type, street suffix, suburb, state, postcode, country) except place_id, latitude, and longitude.',
       },
     },
   },
@@ -657,7 +661,7 @@ export const NoResultsEnterManually: Story = {
     docs: {
       description: {
         story:
-          'When the provider returns no results for a non-empty query (and `preventManualEntry` is false, the default), the dropdown shows an "Enter manually" option. Selecting it opens the manual-entry modal.',
+          'When the provider returns no results for a non-empty query (and `preventManualEntry` is false, the default), the dropdown shows an "Enter manually" option. Selecting it opens the manual-entry modal with all address fields (building name, level, unit, lot no, street number, street name, street type, street suffix, suburb, state, postcode, country).',
       },
     },
   },
