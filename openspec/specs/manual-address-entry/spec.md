@@ -30,7 +30,7 @@ The component SHALL accept an optional boolean prop `preventManualEntry`. When o
 
 ### Requirement: Manual-entry modal presents a form and commits an Address
 
-The component SHALL provide a modal that contains a form for entering address fields. The form SHALL collect data that can be represented as an `Address`. The form SHALL include one form control for each of the following `Address` fields: `building_name`, `level`, `unit`, `lot_no`, `street_number`, `street_name`, `street_type`, `street_suffix`, `suburb`, `state`, `postcode`, `country`. The form SHALL NOT include controls for `place_id`, `latitude`, or `longitude`. On submit (e.g. "Save" or "Apply"), the component SHALL build an `Address` from the entered values (including only non-empty trimmed values for each field), SHALL set the selected address to that value, SHALL invoke the selection callback (`onChange`) with that address, SHALL close the modal, and SHALL update the input display using the active format provider. The modal SHALL be dismissible (e.g. Escape or cancel button) without committing; in that case the address and input value SHALL NOT change.
+The component SHALL provide a modal that contains a form for entering address fields. The form SHALL collect data that can be represented as an `Address`. The form SHALL include one form control for each of the following `Address` fields: `building_name`, `level`, `unit`, `lot_no`, `street_number`, `street_name`, `street_type`, `street_suffix`, `suburb`, `state`, `postcode`, `country`. The form SHALL NOT include controls for `place_id`, `latitude`, or `longitude`. The form SHALL be laid out in a responsive grid with fields in the following order and structure: Row 1 (3 columns): Unit, Lot no, Level; Row 2 (full width): Building name; Row 3 (2 columns): Street number, Street name; Row 4 (2 columns): Street type, Street suffix; Row 5 (2 columns): Suburb, Postcode; Row 6 (2 columns): State, Country. Multi-column rows SHALL distribute space evenly; Building name SHALL span the full width of the form. On submit (e.g. "Save" or "Apply"), the component SHALL build an `Address` from the entered values (including only non-empty trimmed values for each field), SHALL set the selected address to that value, SHALL invoke the selection callback (`onChange`) with that address, SHALL close the modal, and SHALL update the input display using the active format provider. The modal SHALL be dismissible (e.g. Escape or cancel button) without committing; in that case the address and input value SHALL NOT change.
 
 #### Scenario: User submits the manual form
 
@@ -56,3 +56,10 @@ The component SHALL provide a modal that contains a form for entering address fi
 - **WHEN** the manual-entry modal is open
 - **THEN** the form SHALL display inputs for: building_name, level, unit, lot_no, street_number, street_name, street_type, street_suffix, suburb, state, postcode, country
 - **THEN** the form SHALL NOT display inputs for place_id, latitude, or longitude
+
+#### Scenario: Form uses grid layout with specified field order
+
+- **WHEN** the manual-entry modal is open
+- **THEN** the form SHALL display fields in a grid with Row 1: Unit, Lot no, Level (3 columns); Row 2: Building name (full width); Row 3: Street number, Street name (2 columns); Row 4: Street type, Street suffix (2 columns); Row 5: Suburb, Postcode (2 columns); Row 6: State, Country (2 columns)
+- **THEN** Building name SHALL span the full width of the form
+- **THEN** multi-column rows SHALL distribute space evenly
