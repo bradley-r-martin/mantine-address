@@ -4,7 +4,7 @@ import type {
   AddressLookupProvider,
   AddressSuggestion,
   AddressDetails,
-} from './types';
+} from '@/types';
 
 describe('Address type', () => {
   it('Address has optional canonical fields', () => {

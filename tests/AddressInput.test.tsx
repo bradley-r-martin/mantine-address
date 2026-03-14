@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import { AddressInput } from './AddressInput';
+import { AddressInput } from '@/AddressInput';
 import type {
   Address,
   AddressLookupProvider,
   AddressSuggestion,
-} from './types';
-import { australian, type AddressFormatProvider } from './formatters';
+} from '@/types';
+import { australian, type AddressFormatProvider } from '@/formatters';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { GooglePlacesProvider } from './GooglePlacesProvider';
+import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
 
 type GoogleMock = {
   maps: {
