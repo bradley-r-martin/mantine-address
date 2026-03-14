@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useImperativeHandle } from 'react';
 import {
   Autocomplete,
   Button,
+  Grid,
+  Group,
   Loader,
   Modal,
   ScrollArea,
@@ -368,82 +370,122 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     >
       <ScrollArea.Autosize mah="70vh" type="scroll">
         <Stack gap="md">
-          <TextInput
-            label="Building name"
-            placeholder="Building name"
-            value={manualFormBuildingName}
-            onChange={(e) => setManualFormBuildingName(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Level"
-            placeholder="Level"
-            value={manualFormLevel}
-            onChange={(e) => setManualFormLevel(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Unit"
-            placeholder="Unit"
-            value={manualFormUnit}
-            onChange={(e) => setManualFormUnit(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Lot no"
-            placeholder="Lot number"
-            value={manualFormLotNo}
-            onChange={(e) => setManualFormLotNo(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Street number"
-            placeholder="Street number"
-            value={manualFormStreetNumber}
-            onChange={(e) => setManualFormStreetNumber(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Street name"
-            placeholder="Street name"
-            value={manualFormStreetName}
-            onChange={(e) => setManualFormStreetName(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Street type"
-            placeholder="e.g. Road, Street"
-            value={manualFormStreetType}
-            onChange={(e) => setManualFormStreetType(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Street suffix"
-            placeholder="e.g. North, East"
-            value={manualFormStreetSuffix}
-            onChange={(e) => setManualFormStreetSuffix(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Suburb"
-            placeholder="Suburb / City"
-            value={manualFormSuburb}
-            onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
-          />
-          <TextInput
-            label="State / Province"
-            placeholder="State or province"
-            value={manualFormState}
-            onChange={(e) => setManualFormState(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Postcode"
-            placeholder="Postcode"
-            value={manualFormPostcode}
-            onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Country"
-            placeholder="Country"
-            value={manualFormCountry}
-            onChange={(e) => setManualFormCountry(e.currentTarget.value)}
-          />
-          <Button onClick={handleManualSubmit}>Save</Button>
-          <Button variant="default" onClick={closeManualModal}>
-            Cancel
-          </Button>
+          <Grid>
+            {/* Row 1: Unit, Lot no, Level (3 columns) */}
+            <Grid.Col span={4}>
+              <TextInput
+                label="Unit"
+                placeholder="Unit"
+                value={manualFormUnit}
+                onChange={(e) => setManualFormUnit(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            <Grid.Col span={4}>
+              <TextInput
+                label="Lot no"
+                placeholder="Lot number"
+                value={manualFormLotNo}
+                onChange={(e) => setManualFormLotNo(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            <Grid.Col span={4}>
+              <TextInput
+                label="Level"
+                placeholder="Level"
+                value={manualFormLevel}
+                onChange={(e) => setManualFormLevel(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            {/* Row 2: Building name (full width) */}
+            <Grid.Col span={12}>
+              <TextInput
+                label="Building name"
+                placeholder="Building name"
+                value={manualFormBuildingName}
+                onChange={(e) =>
+                  setManualFormBuildingName(e.currentTarget.value)
+                }
+              />
+            </Grid.Col>
+            {/* Row 3: Street number, Street name (2 columns) */}
+            <Grid.Col span={6}>
+              <TextInput
+                label="Street number"
+                placeholder="Street number"
+                value={manualFormStreetNumber}
+                onChange={(e) =>
+                  setManualFormStreetNumber(e.currentTarget.value)
+                }
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <TextInput
+                label="Street name"
+                placeholder="Street name"
+                value={manualFormStreetName}
+                onChange={(e) => setManualFormStreetName(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            {/* Row 4: Street type, Street suffix (2 columns) */}
+            <Grid.Col span={6}>
+              <TextInput
+                label="Street type"
+                placeholder="e.g. Road, Street"
+                value={manualFormStreetType}
+                onChange={(e) => setManualFormStreetType(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <TextInput
+                label="Street suffix"
+                placeholder="e.g. North, East"
+                value={manualFormStreetSuffix}
+                onChange={(e) =>
+                  setManualFormStreetSuffix(e.currentTarget.value)
+                }
+              />
+            </Grid.Col>
+            {/* Row 5: Suburb, Postcode (2 columns) */}
+            <Grid.Col span={6}>
+              <TextInput
+                label="Suburb"
+                placeholder="Suburb / City"
+                value={manualFormSuburb}
+                onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <TextInput
+                label="Postcode"
+                placeholder="Postcode"
+                value={manualFormPostcode}
+                onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            {/* Row 6: State, Country (2 columns) */}
+            <Grid.Col span={6}>
+              <TextInput
+                label="State / Province"
+                placeholder="State or province"
+                value={manualFormState}
+                onChange={(e) => setManualFormState(e.currentTarget.value)}
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <TextInput
+                label="Country"
+                placeholder="Country"
+                value={manualFormCountry}
+                onChange={(e) => setManualFormCountry(e.currentTarget.value)}
+              />
+            </Grid.Col>
+          </Grid>
+          <Group justify="flex-end">
+            <Button variant="subtle" color="gray" onClick={closeManualModal}>
+              Cancel
+            </Button>
+            <Button onClick={handleManualSubmit}>Use manual address</Button>
+          </Group>
         </Stack>
       </ScrollArea.Autosize>
     </Modal>
