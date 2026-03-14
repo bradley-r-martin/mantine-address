@@ -7,17 +7,23 @@ import {
   Title,
   Divider,
 } from '@mantine/core';
-import { international } from './formatters';
-import type { Address } from './types';
+import { australian } from '@/formatters';
+import type { Address } from '@/types';
+import {
+  fullAddress,
+  minimalAddress,
+  usAddress,
+  withSuffix,
+} from './addressFixtures';
 
 const meta: Meta = {
-  title: 'Address Formatting',
+  title: 'Address Formatting / Australian',
   tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
         component:
-          'The **formatter** is responsible for converting an Address into text. Use `international` or `australian` from the formatters module; each provides `toString()` and `toEnvelope()`.',
+          'The **australian** formatter converts an Address to single-line or envelope text using Australian conventions: state as code (e.g. VIC), comma-separated locality. Optional fields are omitted.',
       },
     },
   },
@@ -41,9 +47,9 @@ function FormattingDemo({
   address: Address;
   label: string;
 }) {
-  const single = international.toString(address);
-  const envelope = international.toEnvelope(address);
-  const envelopeUpper = international.toEnvelope(address, { uppercase: true });
+  const single = australian.toString(address);
+  const envelope = australian.toEnvelope(address);
+  const envelopeUpper = australian.toEnvelope(address, { uppercase: true });
 
   return (
     <Stack gap="md">
@@ -72,46 +78,6 @@ function FormattingDemo({
   );
 }
 
-const fullAddress: Address = {
-  place_id: 'ChIJN1t_tDeuEmsRUsoyG83frY4',
-  unit: '5',
-  building_name: 'Tower A',
-  level: '2',
-  street_number: '123',
-  street_name: 'Collins',
-  street_type: 'St',
-  suburb: 'Melbourne',
-  state: 'VIC',
-  postcode: '3000',
-  country: 'AU',
-};
-
-const minimalAddress: Address = {
-  street_name: 'Only Street',
-  suburb: 'Town',
-};
-
-const usAddress: Address = {
-  street_number: '1600',
-  street_name: 'Pennsylvania Avenue',
-  street_type: 'NW',
-  suburb: 'Washington',
-  state: 'DC',
-  postcode: '20500',
-  country: 'US',
-};
-
-const withSuffix: Address = {
-  street_number: '42',
-  street_name: 'Main',
-  street_type: 'St',
-  street_suffix: 'N',
-  suburb: 'Sydney',
-  state: 'NSW',
-  postcode: '2000',
-  country: 'AU',
-};
-
 export const FullAddress: Story = {
   name: 'Full address (all fields)',
   render: () => (
@@ -119,7 +85,7 @@ export const FullAddress: Story = {
       <Title order={3}>Formatting a full address</Title>
       <FormattingDemo
         address={fullAddress}
-        label="Address with unit, building, level, street components, suburb, state, postcode, country."
+        label="Address with unit, building, level, street components, suburb, state (VIC), postcode, country."
       />
     </Stack>
   ),
@@ -132,7 +98,7 @@ export const MinimalAddress: Story = {
       <Title order={3}>Minimal address</Title>
       <FormattingDemo
         address={minimalAddress}
-        label="Only street name and suburb; other formatters omit missing fields."
+        label="Only street name and suburb; optional fields omitted."
       />
     </Stack>
   ),
@@ -145,7 +111,7 @@ export const USAddress: Story = {
       <Title order={3}>US address</Title>
       <FormattingDemo
         address={usAddress}
-        label="Uniform Address works for any region; formatting is region-agnostic."
+        label="Australian formatter applied to a US address; state/country shown as-is."
       />
     </Stack>
   ),
@@ -168,10 +134,10 @@ export const AllVariants: Story = {
   name: 'All variants side by side',
   render: () => (
     <Stack gap="xl">
-      <Title order={3}>Address formatting utilities</Title>
+      <Title order={3}>Australian formatter</Title>
       <Text size="sm" c="dimmed">
-        The formatter (e.g. international) provides toString() and toEnvelope()
-        and operates on the uniform Address type. Optional fields are omitted.
+        toString() and toEnvelope() with Australian conventions (state as code,
+        comma-separated). Optional fields are omitted.
       </Text>
       <Divider />
       <FormattingDemo address={fullAddress} label="Full (AU)" />
