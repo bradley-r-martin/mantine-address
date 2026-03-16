@@ -625,7 +625,67 @@ export const ManualEntryNoProvider: Story = {
     docs: {
       description: {
         story:
-          'With no provider, the component runs in manual-only mode: the input is enabled and clicking or focusing opens the manual-entry modal. The modal form includes all Address fields (building name, level, unit, lot no, street number, street name, street type, street suffix, suburb, state, postcode, country) except place_id, latitude, and longitude.',
+          'With no provider, the component runs in manual-only mode: the input is enabled and clicking or focusing opens the manual-entry modal. The modal form includes all Address fields (building name, level, unit, lot no, street number, street name, street type, street suffix, suburb, state, postcode, country) except place_id, latitude, and longitude. Country is a select (canonical list); State is a select for Australia and United States, and a text input for other countries.',
+      },
+    },
+  },
+};
+
+/**
+ * Manual entry with submitted address display. Demonstrates: Country select
+ * (canonical list); State select when Australia or US is selected; State text
+ * input when another country (e.g. United Kingdom) is selected; submitted
+ * address shows country and state values correctly.
+ */
+function ManualEntryWithDisplayStory() {
+  const [address, setAddress] = useState<Address | null>(null);
+  const singleLine = address ? international.toString(address) : null;
+  return (
+    <Stack gap="md" style={{ maxWidth: 480 }}>
+      <Text size="sm" c="dimmed">
+        Click the input to open the manual-entry modal. Choose{' '}
+        <strong>Country</strong> from the dropdown (e.g. Australia, United
+        States, United Kingdom). For Australia or US, <strong>State</strong> is
+        a dropdown; for other countries it is a text input. Submit to see the
+        address (country and state codes or text) below.
+      </Text>
+      <AddressInput
+        {...({ provider: null } as unknown as ComponentProps<
+          typeof AddressInput
+        >)}
+        label="Address"
+        placeholder="Click to enter address manually…"
+        value={address}
+        onChange={setAddress}
+      />
+      {address != null && (
+        <Stack gap="xs">
+          <Text size="sm" fw={500}>
+            Submitted address:
+          </Text>
+          <Code block>{JSON.stringify(address, null, 2)}</Code>
+          {singleLine != null && (
+            <>
+              <Text size="sm" fw={500}>
+                Formatted (single line):
+              </Text>
+              <Code block>{singleLine}</Code>
+            </>
+          )}
+        </Stack>
+      )}
+    </Stack>
+  );
+}
+
+export const ManualEntryCountryStateSelect: Story = {
+  name: 'Manual entry / Country & State (select vs text)',
+  render: () => <ManualEntryWithDisplayStory />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Manual-entry modal: Country is always a select populated from the canonical countries list. State is a select when the selected country has a configured state list (Australia, United States); for other countries (e.g. United Kingdom), State is a plain text input. Submitted address stores country code and state code (AU/US) or free text. The displayed address shows the submitted values correctly.',
       },
     },
   },

@@ -7,6 +7,7 @@ import {
   Loader,
   Modal,
   ScrollArea,
+  Select,
   Stack,
   TextInput,
   factory,
@@ -21,6 +22,7 @@ import type {
   AddressSuggestion,
 } from './types';
 import { international, type AddressFormatProvider } from './formatters';
+import { countries, getStatesForCountry } from './regions';
 
 /** Keys of Address that are serialized as hidden form inputs, in stable order. */
 const ADDRESS_FORM_KEYS: (keyof Address)[] = [
@@ -464,19 +466,40 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
             </Grid.Col>
             {/* Row 6: State, Country (2 columns) */}
             <Grid.Col span={6}>
-              <TextInput
-                label="State / Province"
-                placeholder="State or province"
-                value={manualFormState}
-                onChange={(e) => setManualFormState(e.currentTarget.value)}
-              />
+              {getStatesForCountry(manualFormCountry) !== undefined ? (
+                <Select
+                  label="State / Province"
+                  placeholder="State or territory"
+                  value={manualFormState || null}
+                  onChange={(v) => setManualFormState(v ?? '')}
+                  data={getStatesForCountry(manualFormCountry)!.map((s) => ({
+                    value: s.code,
+                    label: s.name,
+                  }))}
+                  clearable
+                  searchable
+                />
+              ) : (
+                <TextInput
+                  label="State / Province"
+                  placeholder="State or province"
+                  value={manualFormState}
+                  onChange={(e) => setManualFormState(e.currentTarget.value)}
+                />
+              )}
             </Grid.Col>
             <Grid.Col span={6}>
-              <TextInput
+              <Select
                 label="Country"
                 placeholder="Country"
-                value={manualFormCountry}
-                onChange={(e) => setManualFormCountry(e.currentTarget.value)}
+                value={manualFormCountry || null}
+                onChange={(v) => {
+                  setManualFormCountry(v ?? '');
+                  if (v != null && getStatesForCountry(v) === undefined)
+                    setManualFormState('');
+                }}
+                data={countries.map((c) => ({ value: c.code, label: c.name }))}
+                searchable
               />
             </Grid.Col>
           </Grid>
