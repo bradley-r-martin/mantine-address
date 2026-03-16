@@ -15,3 +15,6 @@ export type {
   AddressDetails,
   AddressLookupProvider,
 } from './types';
+
+export { countries, getStatesForCountry } from './regions';
+export type { Country, StateOption } from './regions';

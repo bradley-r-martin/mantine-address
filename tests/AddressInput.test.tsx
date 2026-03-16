@@ -251,20 +251,23 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(250);
       });
 
-      expect(screen.getByLabelText('Building name')).toBeInTheDocument();
-      expect(screen.getByLabelText('Level')).toBeInTheDocument();
-      expect(screen.getByLabelText('Unit')).toBeInTheDocument();
-      expect(screen.getByLabelText('Lot no')).toBeInTheDocument();
-      expect(screen.getByLabelText('Street number')).toBeInTheDocument();
-      expect(screen.getByLabelText('Street name')).toBeInTheDocument();
-      expect(screen.getByLabelText('Street type')).toBeInTheDocument();
-      expect(screen.getByLabelText('Street suffix')).toBeInTheDocument();
-      expect(screen.getByLabelText('Suburb')).toBeInTheDocument();
-      expect(screen.getByLabelText('State / Province')).toBeInTheDocument();
-      expect(screen.getByLabelText('Postcode')).toBeInTheDocument();
-      expect(screen.getByLabelText('Country')).toBeInTheDocument();
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      expect(within(modal).getByLabelText('Building name')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Level')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Unit')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Lot no')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Street number')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Street name')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Street type')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Street suffix')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Suburb')).toBeInTheDocument();
       expect(
-        screen.queryByLabelText(/place_id|latitude|longitude/i)
+        within(modal).getByLabelText('State / Province')
+      ).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Postcode')).toBeInTheDocument();
+      expect(within(modal).getByLabelText('Country')).toBeInTheDocument();
+      expect(
+        within(modal).queryByLabelText(/place_id|latitude|longitude/i)
       ).not.toBeInTheDocument();
     });
 
@@ -329,40 +332,46 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(250);
       });
 
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+
       await act(async () => {
-        fireEvent.change(screen.getByLabelText('Building name'), {
+        fireEvent.change(within(modal).getByLabelText('Building name'), {
           target: { value: 'Tower A' },
         });
       });
       await act(async () => {
-        fireEvent.change(screen.getByLabelText('Street number'), {
+        fireEvent.change(within(modal).getByLabelText('Street number'), {
           target: { value: '100' },
         });
       });
       await act(async () => {
-        fireEvent.change(screen.getByLabelText('Street name'), {
+        fireEvent.change(within(modal).getByLabelText('Street name'), {
           target: { value: 'George St' },
         });
       });
       await act(async () => {
-        fireEvent.change(screen.getByLabelText('Suburb'), {
+        fireEvent.change(within(modal).getByLabelText('Suburb'), {
           target: { value: 'Sydney' },
         });
       });
       await act(async () => {
-        fireEvent.change(screen.getByLabelText('State / Province'), {
-          target: { value: 'NSW' },
-        });
-      });
-      await act(async () => {
-        fireEvent.change(screen.getByLabelText('Postcode'), {
+        fireEvent.change(within(modal).getByLabelText('Postcode'), {
           target: { value: '2000' },
         });
       });
       await act(async () => {
-        fireEvent.change(screen.getByLabelText('Country'), {
-          target: { value: 'Australia' },
-        });
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'Australia' }));
+      });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('State / Province'));
+      });
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('option', { name: 'New South Wales' })
+        );
       });
       await act(async () => {
         fireEvent.click(
@@ -382,11 +391,192 @@ describe('AddressInput', () => {
         suburb: 'Sydney',
         state: 'NSW',
         postcode: '2000',
-        country: 'Australia',
+        country: 'AU',
       });
       expect(address).not.toHaveProperty('place_id');
       expect(address).not.toHaveProperty('latitude');
       expect(address).not.toHaveProperty('longitude');
+    });
+
+    it('manual form: Country is a select with options', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      const countryControl = within(modal).getByLabelText('Country');
+      expect(countryControl).toHaveAttribute('aria-haspopup', 'listbox');
+      await act(async () => {
+        fireEvent.click(countryControl);
+      });
+      expect(
+        screen.getByRole('option', { name: 'Australia' })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('option', { name: 'United States' })
+      ).toBeInTheDocument();
+    });
+
+    it('manual form: when Australia selected, State is a select', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'Australia' }));
+      });
+      const stateControl = within(modal).getByLabelText('State / Province');
+      expect(stateControl).toHaveAttribute('aria-haspopup', 'listbox');
+      await act(async () => {
+        fireEvent.click(stateControl);
+      });
+      expect(
+        screen.getByRole('option', { name: 'New South Wales' })
+      ).toBeInTheDocument();
+    });
+
+    it('manual form: when United States selected, State is a select', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'United States' }));
+      });
+      const stateControl = within(modal).getByLabelText('State / Province');
+      expect(stateControl).toHaveAttribute('aria-haspopup', 'listbox');
+      await act(async () => {
+        fireEvent.click(stateControl);
+      });
+      expect(
+        screen.getByRole('option', { name: 'California' })
+      ).toBeInTheDocument();
+    });
+
+    it('manual form: when other country selected, State is a text input', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'United Kingdom' }));
+      });
+      const stateControl = within(modal).getByLabelText('State / Province');
+      expect(stateControl).toBe(
+        screen.getByRole('textbox', { name: 'State / Province' })
+      );
+    });
+
+    it('manual form: submitted address includes country and state values', async () => {
+      const onChange = vi.fn();
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            onChange={onChange}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'United States' }));
+      });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('State / Province'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'Illinois' }));
+      });
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('button', { name: /use manual address/i })
+        );
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      const [address] = onChange.mock.calls[0] as [Address];
+      expect(address.country).toBe('US');
+      expect(address.state).toBe('IL');
     });
 
     it('when preventManualEntry is true and no results, only no-results message is shown (no Enter manually)', async () => {
