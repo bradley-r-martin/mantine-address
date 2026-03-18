@@ -22,9 +22,19 @@ The repository SHALL include Storybook configured for the library so that develo
 
 ### Requirement: Storybook documents the library component
 
-The project SHALL provide at least one Storybook story that documents the primary library component so that Storybook acts as both a dev and documentation environment.
+The project SHALL provide Storybook stories that document the primary library component so that Storybook acts as both a dev and documentation environment.
 
-#### Scenario: Primary component has a story
+#### Scenario: Primary component has canonical documentation stories
 
 - **WHEN** Storybook is run or built
-- **THEN** at least one story exists for the library’s primary exported component and is visible in the Storybook UI
+- **THEN** a navigable set of canonical stories exists for the primary exported component (e.g. `AddressInput`) covering the common developer intents (overview, usage, manual entry, restrictions)
+
+#### Scenario: Provider-specific stories are grouped separately
+
+- **WHEN** Storybook is run or built
+- **THEN** provider integration stories (e.g. Google Places) appear under a dedicated provider group (e.g. `Providers/…`) rather than being mixed into the primary component’s core documentation
+
+#### Scenario: Formatting stories are grouped separately
+
+- **WHEN** Storybook is run or built
+- **THEN** formatting documentation appears under a dedicated formatting group (e.g. `Formatting/…`)
