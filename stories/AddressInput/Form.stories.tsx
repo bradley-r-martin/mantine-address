@@ -15,8 +15,16 @@ import { useState } from 'react';
 
 const meta: Meta<typeof AddressInput> = {
   component: AddressInput,
-  title: 'AddressInput/Form',
+  title: 'AddressInput/Usage',
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Common integration patterns for **AddressInput**: controlled vs uncontrolled usage, form reset, and native form submission.',
+      },
+    },
+  },
   decorators: [
     (Story) => (
       <MantineProvider>
@@ -28,6 +36,16 @@ const meta: Meta<typeof AddressInput> = {
 
 export default meta;
 type Story = StoryObj<typeof AddressInput>;
+
+export const WithError: Story = {
+  name: 'With error state',
+  args: {
+    provider: mockProvider,
+    label: 'Address',
+    placeholder: 'Start typing…',
+    error: 'A valid street address is required.',
+  },
+};
 
 function ControlledStory() {
   const [address, setAddress] = useState<Address | null>(null);

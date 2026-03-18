@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { MantineProvider, Button, Text, Stack, Code } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
-import { international, australian } from '@/formatters';
+import { international } from '@/formatters';
 import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
 import { COUNTRIES } from '@/regions';
 import AUSTRALIA from '@/regions/states-au';
@@ -34,7 +34,7 @@ function GooglePlacesDemo({
   const [scriptState, setScriptState] = useState<ScriptState>(() => {
     if (scriptCache.state === 'loaded' && scriptCache.key === apiKey)
       return 'loaded';
-    return apiKey ? 'idle' : 'idle';
+    return 'idle';
   });
 
   const providerRef = useRef<GooglePlacesProvider | null>(null);
@@ -73,10 +73,10 @@ function GooglePlacesDemo({
 
   if (!apiKey) {
     return (
-      <Stack gap="xs" p="md" style={{ maxWidth: 480 }}>
+      <Stack gap="xs" p="md" style={{ maxWidth: 520 }}>
         <Text size="sm" c="dimmed">
           Paste your Google Maps API key in the <strong>Controls</strong> panel
-          to test live address lookup.
+          to test live lookup.
         </Text>
         <Text size="xs" c="dimmed">
           Restrict the key to <Code>http://localhost:*</Code> and your Storybook
@@ -134,7 +134,7 @@ function GooglePlacesDemo({
         onChange={(address) =>
           address != null && console.log('[GooglePlaces] selected:', address)
         }
-        style={{ maxWidth: 480 }}
+        style={{ maxWidth: 520 }}
         {...addressInputProps}
       />
     );
@@ -145,16 +145,13 @@ function GooglePlacesDemo({
 
 const meta: Meta<typeof GooglePlacesDemo> = {
   component: GooglePlacesDemo,
-  title: 'Google Places Provider',
+  title: 'Providers/Google Places',
   tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
         component:
-          'Stories for **AddressInput** using the built-in **GooglePlacesProvider**. ' +
-          'Requires a Google Maps API key with the Places API enabled. ' +
-          'The provider uses Google’s Autocomplete (getPlacePredictions) and Place Details; ' +
-          'when restrictions are set, it passes `allowedCountries` as `componentRestrictions` to filter suggestions by country.',
+          'Canonical examples for using **AddressInput** with **GooglePlacesProvider**. Requires a Google Maps API key with the Places API enabled.',
       },
     },
   },
@@ -188,25 +185,17 @@ export default meta;
 type Story = StoryObj<typeof GooglePlacesDemo>;
 
 export const Default: Story = {
-  name: 'Default',
+  name: 'Setup + default',
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
     label: 'Address',
     placeholder: 'Start typing a real address…',
   },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Basic Google Places autocomplete. Type an address to see suggestions from the Places API.',
-      },
-    },
-  },
 };
 
-export const RestrictionsAustraliaOnly: Story = {
-  name: 'Restrictions / Australia only',
+export const RestrictionsCountryAU: Story = {
+  name: 'Restrictions: Australia only',
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
@@ -214,19 +203,10 @@ export const RestrictionsAustraliaOnly: Story = {
     placeholder: 'Type an address in Australia…',
     restrictions: { allowedCountries: [COUNTRIES.AU] },
   },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Restricts suggestions to Australia using Google’s componentRestrictions. ' +
-          'Only Australian addresses appear in the dropdown; selecting one still runs client-side validation.',
-      },
-    },
-  },
 };
 
-export const RestrictionsNSWOnly: Story = {
-  name: 'Restrictions / NSW only',
+export const RestrictionsRegionNSW: Story = {
+  name: 'Restrictions: NSW only',
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
@@ -236,87 +216,14 @@ export const RestrictionsNSWOnly: Story = {
       allowedCountries: [COUNTRIES.AU],
       allowedRegions: [AUSTRALIA.REGIONS.NEW_SOUTH_WALES],
     },
-    format: australian,
     defaultAddress: { country: 'AU', state: 'NSW' },
   },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Uses allowedRegions with REGIONS.NEW_SOUTH_WALES. Google biases results to NSW (location + radius); only NSW addresses accepted. ' +
-          'Pass allowedCountries: [COUNTRIES.AU] when using allowedRegions.',
-      },
-    },
-  },
 };
 
-export const RestrictionsVictoriaOnly: Story = {
-  name: 'Restrictions / Victoria only',
-  args: {
-    apiKey: BUILD_TIME_KEY ?? '',
-    debounce: 300,
-    label: 'Address (Victoria only)',
-    placeholder: 'Type an address in Victoria, Australia…',
-    restrictions: {
-      allowedCountries: [COUNTRIES.AU],
-      allowedRegions: [AUSTRALIA.REGIONS.VICTORIA],
-    },
-    format: australian,
-    defaultAddress: { country: 'AU', state: 'VIC' },
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Uses allowedRegions with REGIONS.VICTORIA. Google biases results to Victoria (location + radius); only VIC addresses accepted. ' +
-          'Pass allowedCountries: [COUNTRIES.AU] when using allowedRegions.',
-      },
-    },
-  },
-};
-
-export const AustralianFormat: Story = {
-  name: 'Australian format',
-  args: {
-    apiKey: BUILD_TIME_KEY ?? '',
-    debounce: 300,
-    label: 'Address',
-    placeholder: 'Start typing…',
-    format: australian,
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Selected address is displayed using the Australian formatter (state as code, comma-separated).',
-      },
-    },
-  },
-};
-
-export const WithDefaultAddress: Story = {
-  name: 'With default address (manual form)',
-  args: {
-    apiKey: BUILD_TIME_KEY ?? '',
-    debounce: 300,
-    label: 'Address',
-    placeholder: 'Type or click to enter manually…',
-    defaultAddress: { country: 'AU', state: 'NSW' },
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'When the user chooses "Enter manually", the manual form opens with Country and State pre-filled (e.g. Australia, NSW).',
-      },
-    },
-  },
-};
-
-function ControlledGoogleStory() {
+function ControlledStory() {
   const [address, setAddress] = useState<Address | null>(null);
   return (
-    <Stack gap="md" style={{ maxWidth: 480 }}>
+    <Stack gap="md" style={{ maxWidth: 520 }}>
       <GooglePlacesDemo
         apiKey={BUILD_TIME_KEY ?? ''}
         debounce={300}
@@ -341,35 +248,6 @@ function ControlledGoogleStory() {
 }
 
 export const Controlled: Story = {
-  name: 'Controlled with display',
-  render: () => <ControlledGoogleStory />,
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Controlled usage: selected address is shown below; Clear resets the field.',
-      },
-    },
-  },
-};
-
-export const RestrictionsAustraliaOnlyWithFormat: Story = {
-  name: 'Restrictions / Australia only + format',
-  args: {
-    apiKey: BUILD_TIME_KEY ?? '',
-    debounce: 300,
-    label: 'Australian address',
-    placeholder: 'Type an Australian address…',
-    restrictions: { allowedCountries: [COUNTRIES.AU] },
-    format: australian,
-    defaultAddress: { country: 'AU' },
-  },
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Combines country restriction (Australia only), Australian display format, and a default country for the manual form.',
-      },
-    },
-  },
+  name: 'Controlled',
+  render: () => <ControlledStory />,
 };

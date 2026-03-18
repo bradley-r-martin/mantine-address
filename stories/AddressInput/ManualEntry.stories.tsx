@@ -9,8 +9,16 @@ import { useState } from 'react';
 
 const meta: Meta<typeof AddressInput> = {
   component: AddressInput,
-  title: 'AddressInput/Manual Entry',
+  title: 'AddressInput/Manual entry',
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Manual-entry behaviours for **AddressInput**: pre-filling the form, handling no-results, and controlling whether users can enter manually.',
+      },
+    },
+  },
   decorators: [
     (Story) => (
       <MantineProvider>
@@ -22,26 +30,6 @@ const meta: Meta<typeof AddressInput> = {
 
 export default meta;
 type Story = StoryObj<typeof AddressInput>;
-
-export const NoProvider: Story = {
-  name: 'No provider (click opens modal)',
-  render: () => (
-    <Stack gap="xs" style={{ maxWidth: 480 }}>
-      <Text size="sm" c="dimmed">
-        No provider — manual-only. Click the input to open the manual-entry
-        modal with all address fields.
-      </Text>
-      <AddressInput
-        {...({ provider: null } as unknown as ComponentProps<
-          typeof AddressInput
-        >)}
-        label="Address"
-        placeholder="Click to enter address manually…"
-        onChange={(address) => console.log('Manual address:', address)}
-      />
-    </Stack>
-  ),
-};
 
 function CountryStateDisplayStory() {
   const [address, setAddress] = useState<Address | null>(null);
