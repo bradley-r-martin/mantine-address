@@ -1,0 +1,54 @@
+---
+alwaysApply: true
+---
+
+# Mantine Component Library Rules
+
+## Purpose
+This project builds reusable, open-source components designed to integrate seamlessly into Mantine-based applications.
+
+All components must behave as first-class Mantine citizens:
+- Follow Mantine patterns
+- Be composable and extensible
+- Be type-safe and predictable
+- Be unopinionated where possible
+
+---
+
+## Core Principles
+
+### 1. Mantine-First Design
+- Always prefer Mantine primitives (`Box`, `Input`, `Combobox`, etc.) over raw HTML.
+- Reuse Mantine hooks (`useDisclosure`, `useId`, etc.) where applicable.
+- Respect Mantine's styling system (`classNames`, `styles`, `vars`).
+
+### 2. Consumer Control > Internal Opinion
+- Never hardcode behavior that a consumer may want to override.
+- Prefer controlled + uncontrolled patterns where applicable.
+- Expose configuration via props instead of internal logic.
+
+Bad:
+- Hidden internal state with no override
+
+Good:
+- `value` + `defaultValue` + `onChange`
+
+---
+
+## Component Architecture
+
+### 3. Public API Design
+- Props must be:
+  - Explicit
+  - Minimal
+  - Predictable
+
+- Avoid "magic" props or implicit behavior.
+
+- Prefer:
+```ts
+type Props = {
+  value?: string
+  defaultValue?: string
+  onChange?: (value: string) => void
+}
