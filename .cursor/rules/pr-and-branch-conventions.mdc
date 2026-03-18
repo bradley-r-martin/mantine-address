@@ -1,0 +1,42 @@
+---
+description: Enforce repo branch + PR conventions (OpenSpec)
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+## When asked to create a branch
+
+This repo does **not** use `feat/*`, `fix/*`, etc. Branches must follow **OpenSpec** naming.
+
+- **Active change branch**: branch name MUST equal the OpenSpec change directory name.
+  - Valid if `openspec/changes/<branch>/` exists.
+  - If it does not exist, create the change first with `openspec new change <branch>`, then create the branch with the exact same name.
+
+- **Archive branch**: branch name MUST be `<change-name>-archive`.
+  - Valid iff an archived change exists at `openspec/changes/archive/*-<change-name>/`.
+  - If no such archived change exists, do **not** proceed; archive the change first, then create `<change-name>-archive`.
+
+## When asked to open / raise a PR
+
+- **Base branch MUST be `next`**.
+- **Never** open PRs against `main` (release-only branch).
+- Ensure the **head branch** satisfies the branch naming rules above or the PR will fail CI.
+
+### Special rules for `-archive` branches
+
+If the head branch ends with `-archive`:
+- The PR must change **only** files under `openspec/`.
+- If any changed file is outside `openspec/`, stop and fix the branch contents (CI will fail otherwise).
+
+## Additional CI constraints to respect
+
+- Do **not** change `package.json` `"version"` in a PR (CI will fail).
+
+## If the user says “raise a PR” without giving a change name
+
+- First determine the intended OpenSpec change name.
+- Ensure `openspec/changes/<change-name>/` exists (create it if needed).
+- Use that exact `<change-name>` as the branch name.
+- Target `next` for the PR base.
+
