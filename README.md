@@ -106,8 +106,13 @@ import type {
 } from 'mantine-address';
 
 const myProvider: AddressLookupProvider = {
-  async getSuggestions(input: string): Promise<AddressSuggestion[]> {
-    const results = await myAddressApi.autocomplete(input);
+  async getSuggestions(
+    input: string,
+    options?: { restrictions?: AddressRestrictions }
+  ): Promise<AddressSuggestion[]> {
+    const results = await myAddressApi.autocomplete(input, {
+      country: options?.restrictions?.allowedCountries,
+    });
     return results.map((r) => ({
       id: r.placeId,
       label: r.fullAddress,
@@ -147,6 +152,37 @@ interface AddressSuggestion {
 
 When present, `AddressInput` renders the matching portions of each suggestion label in **bold** inside the dropdown. Providers that don't have this data can simply omit the field — the label renders as plain text. The built-in `GooglePlacesProvider` populates this automatically from the Google Places API response.
 
+### Default address and restrictions
+
+You can **pre-fill the manual-entry form** when the user opens it and **restrict** which addresses are accepted.
+
+- **`defaultAddress`** — Optional `Partial<Address>`. When the user opens the manual-entry modal, only fields present in `defaultAddress` are pre-filled; others stay empty. Does not change the component’s `value` or `defaultValue`; it only sets the form’s initial state.
+
+- **`restrictions`** — Optional `AddressRestrictions` to limit which addresses are valid. When set, both **autocomplete selection** and **manual submit** are validated: only addresses that satisfy every non-empty restriction are accepted. An address that fails (e.g. country not in `allowedCountries`) does not call `onChange` and shows a validation error (“Address must be within the allowed region”).
+
+**`AddressRestrictions`** (optional string arrays; all are AND semantics):
+
+- `allowedCountries?: (string | Country)[]` — e.g. `[COUNTRIES.AU, COUNTRIES.NZ]` (import `COUNTRIES` from the package; same pattern as `REGIONS`)
+- `allowedStates?: string[]` — e.g. `['NSW', 'VIC']`
+- `allowedPostcodes?: string[]` — e.g. `['2000', '2001']`
+- `allowedSuburbs?: string[]` — e.g. `['Sydney', 'Melbourne']`
+
+When `allowedCountries` is set, the manual form’s Country select lists only those countries. When `allowedStates` is set and the country has a state list (e.g. AU, US), the State select lists only those states; for other countries the state field is validated on submit.
+
+**Provider filtering:** Restrictions are passed to the lookup provider’s `getSuggestions(input, options)` so providers can filter server-side when possible. The built-in `GooglePlacesProvider` uses `allowedCountries` as Google’s `componentRestrictions.country`, so suggestions are restricted to those countries. Other restriction fields (state, postcode, suburb) are not supported by the Places Autocomplete API and remain client-side only after selection.
+
+```tsx
+<AddressInput
+  provider={provider}
+  defaultAddress={{ country: 'AU', state: 'NSW' }}
+  restrictions={{
+    allowedCountries: [COUNTRIES.AU],
+    allowedPostcodes: ['2000', '2001'],
+  }}
+  onChange={setAddress}
+/>
+```
+
 ### Form support (controlled, uncontrolled, native forms)
 
 The component supports both **controlled** and **uncontrolled** usage:
@@ -172,6 +208,8 @@ Storybook includes **Form / Controlled**, **Form / Uncontrolled**, **Form / With
 | `name`                             | `string`                             | —                    | When set, hidden inputs are rendered for native form submit (e.g. `address[suburb]`, `address[postcode]`).                                                                |
 | `debounce`                         | `number`                             | `300`                | Milliseconds to debounce before fetching suggestions                                                                                                                      |
 | `nothingFoundMessage`              | `React.ReactNode`                    | `"No results found"` | Message shown in the dropdown when the provider returns an empty array for a non-empty query                                                                              |
+| `defaultAddress`                   | `Partial<Address>`                   | —                    | Optional. Pre-fills the manual-entry form when the modal opens; only provided fields are set. Does not change `value`/`defaultValue`.                                     |
+| `restrictions`                     | `AddressRestrictions`                | —                    | Optional. Restricts which addresses are accepted (allowed countries, states, postcodes, suburbs). Applied to autocomplete selection and manual submit.                    |
 | + all Mantine `Autocomplete` props |                                      |                      | Forwarded to the underlying `Autocomplete` (label, placeholder, error, size, etc.)                                                                                        |
 
 The component’s ref type is `AddressInputRef` (extends `HTMLInputElement` with `reset(): void`). Use the ref for focus and to call `reset()` when uncontrolled.

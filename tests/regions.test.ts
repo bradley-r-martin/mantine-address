@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  countries,
-  getStatesForCountry,
-  type Country,
-  type StateOption,
-} from '@/regions';
+import { countries, getStatesForCountry, type Country } from '@/regions';
 
 describe('regions API', () => {
   describe('countries', () => {
@@ -41,18 +36,18 @@ describe('regions API', () => {
       const list = getStatesForCountry('AU');
       expect(list).toBeDefined();
       expect(Array.isArray(list)).toBe(true);
-      expect((list as StateOption[]).length).toBeGreaterThan(0);
-      expect((list as StateOption[]).some((s) => s.code === 'NSW')).toBe(true);
-      expect((list as StateOption[]).some((s) => s.code === 'VIC')).toBe(true);
+      expect(list!.length).toBeGreaterThan(0);
+      expect(list!.some((s) => s.code === 'NSW')).toBe(true);
+      expect(list!.some((s) => s.code === 'VIC')).toBe(true);
     });
 
     it('returns non-empty list for US', () => {
       const list = getStatesForCountry('US');
       expect(list).toBeDefined();
       expect(Array.isArray(list)).toBe(true);
-      expect((list as StateOption[]).length).toBeGreaterThan(0);
-      expect((list as StateOption[]).some((s) => s.code === 'CA')).toBe(true);
-      expect((list as StateOption[]).some((s) => s.code === 'NY')).toBe(true);
+      expect(list!.length).toBeGreaterThan(0);
+      expect(list!.some((s) => s.code === 'CA')).toBe(true);
+      expect(list!.some((s) => s.code === 'NY')).toBe(true);
     });
 
     it('returns undefined for unconfigured country code', () => {

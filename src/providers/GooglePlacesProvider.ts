@@ -2,6 +2,7 @@ import type {
   Address,
   AddressLookupProvider,
   AddressSuggestion,
+  GetSuggestionsOptions,
 } from '../types';
 
 export interface GooglePlacesProviderOptions {
@@ -33,6 +34,13 @@ function mapAddressComponents(
   const getShort = (type: string): string | undefined =>
     components.find((c) => c.types.includes(type))?.short_name || undefined;
 
+  // Prefer short_name for state (e.g. NSW, VIC) so it matches restriction codes and manual form.
+  const stateComponent = components.find((c) =>
+    c.types.includes('administrative_area_level_1')
+  );
+  const state =
+    stateComponent?.short_name ?? stateComponent?.long_name ?? undefined;
+
   const address: Address = {
     place_id: placeId,
     street_number: getLong('street_number'),
@@ -40,7 +48,7 @@ function mapAddressComponents(
     street_type: undefined,
     street_suffix: undefined,
     suburb: getLong('locality') ?? getLong('administrative_area_level_3'),
-    state: getLong('administrative_area_level_1'),
+    state,
     postcode: getLong('postal_code'),
     country: getShort('country') ?? getLong('country'),
     latitude: lat,
@@ -56,42 +64,69 @@ export class GooglePlacesProvider implements AddressLookupProvider {
     this.apiKey = apiKey;
   }
 
-  async getSuggestions(input: string): Promise<AddressSuggestion[]> {
+  async getSuggestions(
+    input: string,
+    options?: GetSuggestionsOptions
+  ): Promise<AddressSuggestion[]> {
     assertGoogleMapsLoaded();
 
     if (!input) return [];
 
     const service = new google.maps.places.AutocompleteService();
 
-    return new Promise((resolve, reject) => {
-      service.getPlacePredictions(
-        { input, types: ['address'] },
-        (predictions, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-            resolve([]);
-            return;
-          }
-          if (
-            status !== google.maps.places.PlacesServiceStatus.OK ||
-            !predictions
-          ) {
-            reject(
-              new Error(`[GooglePlacesProvider] Autocomplete error: ${status}`)
-            );
-            return;
-          }
-          resolve(
-            predictions.map((p) => ({
-              id: p.place_id ?? p.description,
-              label: p.description,
-              matchedSubstrings: p.matched_substrings?.map((ms) => ({
-                offset: ms.offset,
-                length: ms.length,
-              })),
-            }))
-          );
-        }
+    const request: google.maps.places.AutocompletionRequest = {
+      input,
+      types: ['address'],
+    };
+
+    const res = options?.restrictions;
+
+    // Country restriction (from allowedCountries or when using allowedRegions, pass allowedCountries too).
+    const countries =
+      res?.allowedCountries?.length &&
+      res.allowedCountries.map((c) =>
+        (typeof c === 'string' ? c : c.code).trim().toLowerCase()
       );
+    if (countries) {
+      request.componentRestrictions = { country: countries };
+    }
+
+    // Location bias from first allowedRegion's location (latitude, longitude, radius in meters).
+    const firstRegion = res?.allowedRegions?.[0];
+    if (firstRegion?.location) {
+      request.location = new google.maps.LatLng(
+        firstRegion.location.latitude,
+        firstRegion.location.longitude
+      );
+      request.radius = firstRegion.location.radius;
+    }
+
+    return new Promise((resolve, reject) => {
+      service.getPlacePredictions(request, (predictions, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          resolve([]);
+          return;
+        }
+        if (
+          status !== google.maps.places.PlacesServiceStatus.OK ||
+          !predictions
+        ) {
+          reject(
+            new Error(`[GooglePlacesProvider] Autocomplete error: ${status}`)
+          );
+          return;
+        }
+        resolve(
+          predictions.map((p) => ({
+            id: p.place_id ?? p.description,
+            label: p.description,
+            matchedSubstrings: p.matched_substrings?.map((ms) => ({
+              offset: ms.offset,
+              length: ms.length,
+            })),
+          }))
+        );
+      });
     });
   }
 

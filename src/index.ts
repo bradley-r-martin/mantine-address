@@ -11,10 +11,18 @@ export type {
 
 export type {
   Address,
+  AddressRestrictions,
   AddressSuggestion,
   AddressDetails,
+  GetSuggestionsOptions,
   AddressLookupProvider,
 } from './types';
 
-export { countries, getStatesForCountry } from './regions';
-export type { Country, StateOption } from './regions';
+export {
+  countries,
+  COUNTRIES,
+  getStatesForCountry,
+  REGIONS,
+  REGIONS_US,
+} from './regions';
+export type { Country, Region } from './regions';

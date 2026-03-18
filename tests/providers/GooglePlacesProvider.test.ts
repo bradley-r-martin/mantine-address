@@ -212,7 +212,7 @@ describe('GooglePlacesProvider', () => {
         street_type: undefined,
         street_suffix: undefined,
         suburb: 'Springfield',
-        state: 'Illinois',
+        state: 'IL',
         postcode: '62701',
         country: 'US',
         latitude: undefined,
