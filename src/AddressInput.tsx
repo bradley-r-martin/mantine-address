@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useImperativeHandle } from 'react';
 import {
+  Alert,
   Autocomplete,
   Button,
   Grid,
@@ -19,10 +20,15 @@ import type { Factory } from '@mantine/core';
 import type {
   Address,
   AddressLookupProvider,
+  AddressRestrictions,
   AddressSuggestion,
 } from './types';
 import { international, type AddressFormatProvider } from './formatters';
+import { addressSatisfiesRestrictions } from './restrictions';
 import { countries, getStatesForCountry } from './regions';
+
+/** Default validation message when an address does not satisfy restrictions. */
+const RESTRICTION_ERROR_MESSAGE = 'Address must be within the allowed region';
 
 /** Keys of Address that are serialized as hidden form inputs, in stable order. */
 const ADDRESS_FORM_KEYS: (keyof Address)[] = [
@@ -86,6 +92,16 @@ export interface AddressInputProps extends Omit<
    * for a non-empty query. Defaults to `"No results found"`.
    */
   nothingFoundMessage?: React.ReactNode;
+  /**
+   * Optional default values for the manual-entry form. When the user opens the manual modal,
+   * only fields present in this object are pre-filled; others stay empty. Does not change value/defaultValue.
+   */
+  defaultAddress?: Partial<Address>;
+  /**
+   * Optional restrictions (allowed countries, states, postcodes, suburbs). When set, only addresses
+   * satisfying all non-empty restrictions are accepted (autocomplete selection and manual submit).
+   */
+  restrictions?: AddressRestrictions;
 }
 
 export interface AddressInputRef extends HTMLInputElement {
@@ -174,6 +190,9 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     name: nameProp,
     rightSection,
     nothingFoundMessage,
+    defaultAddress,
+    restrictions,
+    error: errorProp,
     ...rest
   } = props;
 
@@ -197,6 +216,8 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const [manualFormState, setManualFormState] = useState('');
   const [manualFormPostcode, setManualFormPostcode] = useState('');
   const [manualFormCountry, setManualFormCountry] = useState('');
+  const [manualFormError, setManualFormError] = useState<string | null>(null);
+  const [restrictionError, setRestrictionError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -204,18 +225,21 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const manualModalJustClosedRef = useRef(false);
 
   const openManualModal = (initialStreet?: string) => {
-    setManualFormBuildingName('');
-    setManualFormLevel('');
-    setManualFormUnit('');
-    setManualFormLotNo('');
-    setManualFormStreetNumber('');
-    setManualFormStreetName(initialStreet ?? '');
-    setManualFormStreetType('');
-    setManualFormStreetSuffix('');
-    setManualFormSuburb('');
-    setManualFormState('');
-    setManualFormPostcode('');
-    setManualFormCountry('');
+    setManualFormError(null);
+    const d = defaultAddress ?? {};
+    const str = (v: string | undefined) => (v != null ? String(v).trim() : '');
+    setManualFormBuildingName(str(d.building_name));
+    setManualFormLevel(str(d.level));
+    setManualFormUnit(str(d.unit));
+    setManualFormLotNo(str(d.lot_no));
+    setManualFormStreetNumber(str(d.street_number));
+    setManualFormStreetName(initialStreet ?? str(d.street_name));
+    setManualFormStreetType(str(d.street_type));
+    setManualFormStreetSuffix(str(d.street_suffix));
+    setManualFormSuburb(str(d.suburb));
+    setManualFormState(str(d.state));
+    setManualFormPostcode(str(d.postcode));
+    setManualFormCountry(str(d.country));
     setManualModalOpen(true);
   };
 
@@ -251,6 +275,13 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     if (manualFormState.trim()) address.state = manualFormState.trim();
     if (manualFormPostcode.trim()) address.postcode = manualFormPostcode.trim();
     if (manualFormCountry.trim()) address.country = manualFormCountry.trim();
+
+    if (restrictions && !addressSatisfiesRestrictions(address, restrictions)) {
+      setManualFormError(RESTRICTION_ERROR_MESSAGE);
+      return;
+    }
+    setManualFormError(null);
+    setRestrictionError(null);
     setTypedInput(formatProvider.toString(address));
     if (!isControlled) setUncontrolledAddress(address);
     onChange?.(address);
@@ -295,6 +326,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     if (value === 'Enter manually' || value === ENTER_MANUALLY_VALUE) {
       return;
     }
+    setRestrictionError(null);
     setTypedInput(value);
     if (!isControlled) setUncontrolledAddress(null);
     onChange?.(null);
@@ -317,7 +349,9 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
         setIsLoading(true);
 
         provider
-          .getSuggestions(value)
+          .getSuggestions(value, {
+            restrictions: restrictions ?? undefined,
+          })
           .then((results) => {
             if (requestIdRef.current !== currentId) return;
             setSuggestions(results);
@@ -345,6 +379,14 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     provider
       .getDetails(suggestion.id)
       .then((address) => {
+        if (
+          restrictions &&
+          !addressSatisfiesRestrictions(address, restrictions)
+        ) {
+          setRestrictionError(RESTRICTION_ERROR_MESSAGE);
+          return;
+        }
+        setRestrictionError(null);
         const formatted = formatProvider.toString(address);
         setTypedInput(formatted);
         if (!isControlled) setUncontrolledAddress(address);
@@ -352,6 +394,38 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       })
       .catch(() => {});
   };
+
+  const allowedCountrySet =
+    restrictions?.allowedCountries?.length &&
+    new Set(
+      restrictions.allowedCountries.map((c) =>
+        (typeof c === 'string' ? c : c.code).trim().toUpperCase()
+      )
+    );
+  const manualCountryList = (
+    allowedCountrySet
+      ? countries.filter((c) => allowedCountrySet.has(c.code))
+      : countries
+  ).map((c) => ({ value: c.code, label: c.name }));
+
+  const stateOptionsRaw = getStatesForCountry(manualFormCountry);
+  const allowedStateSet = restrictions?.allowedRegions?.length
+    ? new Set(
+        restrictions.allowedRegions.map((r) =>
+          r.abbreviation.trim().toUpperCase()
+        )
+      )
+    : restrictions?.allowedStates?.length &&
+      new Set(restrictions.allowedStates.map((s) => s.trim().toUpperCase()));
+  const manualStateList = (
+    stateOptionsRaw
+      ? allowedStateSet
+        ? stateOptionsRaw.filter((s) => allowedStateSet.has(s.code))
+        : stateOptionsRaw
+      : undefined
+  )?.map((s) => ({ value: s.code, label: s.name }));
+
+  const effectiveError = restrictionError ?? errorProp;
 
   // When no results: show disabled no-results message; when !preventManualEntry also show selectable "Enter manually".
   const data: (string | ComboboxItem)[] = showNoResults
@@ -466,16 +540,13 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
             </Grid.Col>
             {/* Row 6: State, Country (2 columns) */}
             <Grid.Col span={6}>
-              {getStatesForCountry(manualFormCountry) !== undefined ? (
+              {manualStateList !== undefined ? (
                 <Select
                   label="State / Province"
                   placeholder="State or territory"
                   value={manualFormState || null}
                   onChange={(v) => setManualFormState(v ?? '')}
-                  data={getStatesForCountry(manualFormCountry)!.map((s) => ({
-                    value: s.code,
-                    label: s.name,
-                  }))}
+                  data={manualStateList}
                   clearable
                   searchable
                 />
@@ -498,11 +569,14 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
                   if (v != null && getStatesForCountry(v) === undefined)
                     setManualFormState('');
                 }}
-                data={countries.map((c) => ({ value: c.code, label: c.name }))}
+                data={manualCountryList}
                 searchable
               />
             </Grid.Col>
           </Grid>
+          {manualFormError && (
+            <Alert variant="light" color="red" title={manualFormError} />
+          )}
           <Group justify="flex-end">
             <Button variant="subtle" color="gray" onClick={closeManualModal}>
               Cancel
@@ -527,6 +601,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
           onFocus={handleOpenManualModalNoProvider}
           onClick={handleOpenManualModalNoProvider}
           readOnly
+          error={effectiveError}
           {...rest}
         />
         {manualModal}
@@ -543,6 +618,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
         value={displayValue}
         onChange={handleChange}
         onOptionSubmit={handleOptionSubmit}
+        error={effectiveError}
         rightSection={
           rightSection ??
           (isLoading ? (

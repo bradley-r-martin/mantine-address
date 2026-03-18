@@ -8,6 +8,7 @@ import type {
   AddressSuggestion,
 } from '@/types';
 import { australian, type AddressFormatProvider } from '@/formatters';
+import { COUNTRIES } from '@/regions';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },
@@ -169,6 +170,44 @@ describe('AddressInput', () => {
       expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
     });
 
+    it('no provider: open modal with defaultAddress pre-fills form fields', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            defaultAddress={{
+              country: 'AU',
+              state: 'NSW',
+              suburb: 'Sydney',
+              postcode: '2000',
+            }}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(screen.getByText('Enter address')).toBeInTheDocument();
+      const modal = screen.getByRole('dialog');
+      // Text inputs that have defaults should show the values
+      expect(within(modal).getByLabelText('Suburb')).toHaveValue('Sydney');
+      expect(within(modal).getByLabelText('Postcode')).toHaveValue('2000');
+      // Fields not in defaultAddress should be empty
+      expect(within(modal).getByLabelText('Street name')).toHaveValue('');
+      // Country and State selects are present and pre-filled (value is set internally; display depends on Mantine Select)
+      expect(within(modal).getByLabelText('Country')).toBeInTheDocument();
+      expect(
+        within(modal).getByLabelText('State / Province')
+      ).toBeInTheDocument();
+    });
+
     it('no provider: cancel closes modal without calling onChange', async () => {
       const onChange = vi.fn();
       render(
@@ -200,6 +239,129 @@ describe('AddressInput', () => {
       });
 
       expect(onChange).not.toHaveBeenCalled();
+      expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
+    });
+
+    it('no provider: manual submit with address failing restrictions shows error and does not call onChange', async () => {
+      const onChange = vi.fn();
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            restrictions={{
+              allowedCountries: [COUNTRIES.AU],
+              allowedPostcodes: ['2000'],
+            }}
+            onChange={onChange}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog');
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'Australia' }));
+      });
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('State / Province'));
+      });
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('option', { name: 'New South Wales' })
+        );
+      });
+      await act(async () => {
+        fireEvent.change(within(modal).getByLabelText('Postcode'), {
+          target: { value: '3000' },
+        });
+      });
+      await act(async () => {
+        fireEvent.change(within(modal).getByLabelText('Street name'), {
+          target: { value: '1 Main St' },
+        });
+      });
+      await act(async () => {
+        fireEvent.click(
+          within(modal).getByRole('button', { name: /use manual address/i })
+        );
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(onChange).not.toHaveBeenCalled();
+      expect(screen.getByText('Enter address')).toBeInTheDocument();
+      expect(
+        screen.getByText('Address must be within the allowed region')
+      ).toBeInTheDocument();
+    });
+
+    it('no provider: manual submit with address passing restrictions calls onChange and closes modal', async () => {
+      const onChange = vi.fn();
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            restrictions={{ allowedCountries: [COUNTRIES.AU] }}
+            onChange={onChange}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog');
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
+      const auOption = screen.getByRole('option', { name: /australia/i });
+      await act(async () => {
+        fireEvent.click(auOption);
+      });
+      await act(async () => {
+        fireEvent.change(within(modal).getByLabelText('Street name'), {
+          target: { value: '1 George St' },
+        });
+      });
+      await act(async () => {
+        fireEvent.click(
+          within(modal).getByRole('button', { name: /use manual address/i })
+        );
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          country: 'AU',
+          street_name: '1 George St',
+        })
+      );
       expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
     });
 
@@ -642,7 +804,9 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(300);
       });
 
-      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
+        restrictions: undefined,
+      });
     });
 
     it('respects a custom debounce prop', async () => {
@@ -661,7 +825,9 @@ describe('AddressInput', () => {
       await act(async () => {
         vi.advanceTimersByTime(1);
       });
-      expect(provider.getSuggestions).toHaveBeenCalledWith('test');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('test', {
+        restrictions: undefined,
+      });
     });
 
     it('debounces rapid keystrokes — only fires once after typing stops', async () => {
@@ -678,7 +844,9 @@ describe('AddressInput', () => {
       });
 
       expect(provider.getSuggestions).toHaveBeenCalledTimes(1);
-      expect(provider.getSuggestions).toHaveBeenCalledWith('123');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123', {
+        restrictions: undefined,
+      });
     });
   });
 
@@ -789,7 +957,9 @@ describe('AddressInput', () => {
         expect(marks[0].textContent).toBe('123');
       }
       // getSuggestions is the minimum verifiable behavior when jsdom doesn't render options
-      expect(provider.getSuggestions).toHaveBeenCalledWith('123');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123', {
+        restrictions: undefined,
+      });
     });
 
     it('renders the label as plain text when matchedSubstrings is absent', async () => {
@@ -810,7 +980,9 @@ describe('AddressInput', () => {
       await act(async () => {});
 
       expect(document.querySelectorAll('mark')).toHaveLength(0);
-      expect(provider.getSuggestions).toHaveBeenCalledWith('123');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123', {
+        restrictions: undefined,
+      });
     });
   });
 
@@ -903,7 +1075,9 @@ describe('AddressInput', () => {
       // Flush the getSuggestions promise resolution and React state update
       await act(async () => {});
 
-      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main');
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
+        restrictions: undefined,
+      });
 
       const options = screen.queryAllByRole('option');
       if (options.length > 0) {
@@ -932,6 +1106,76 @@ describe('AddressInput', () => {
       });
 
       expect(provider.getSuggestions).toHaveBeenCalled();
+    });
+
+    it('when restrictions set and selected suggestion resolves to address outside restrictions: shows error and does not call onChange with address', async () => {
+      const provider = createMockProvider();
+      const onChange = vi.fn();
+      const restrictions = { allowedCountries: [COUNTRIES.AU] as const };
+      renderComponent({
+        provider,
+        onChange,
+        restrictions,
+      });
+
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: '123 Main' },
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+      await act(async () => {});
+
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
+        restrictions,
+      });
+
+      const options = screen.queryAllByRole('option');
+      if (options.length > 0) {
+        await act(async () => {
+          fireEvent.click(options[0]);
+        });
+        await act(async () => {});
+
+        expect(onChange).not.toHaveBeenCalledWith(mockAddress);
+        expect(
+          screen.getByText('Address must be within the allowed region')
+        ).toBeInTheDocument();
+      }
+    });
+
+    it('when restrictions set and selected suggestion passes restrictions: calls onChange', async () => {
+      const provider = createMockProvider();
+      const onChange = vi.fn();
+      const restrictions = { allowedCountries: [COUNTRIES.US] as const };
+      renderComponent({
+        provider,
+        onChange,
+        restrictions,
+      });
+
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: '123 Main' },
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(300);
+      });
+      await act(async () => {});
+
+      expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
+        restrictions,
+      });
+
+      const options = screen.queryAllByRole('option');
+      if (options.length > 0) {
+        await act(async () => {
+          fireEvent.click(options[0]);
+        });
+        await act(async () => {});
+
+        expect(provider.getDetails).toHaveBeenCalledWith('id1');
+        expect(onChange).toHaveBeenCalledWith(mockAddress);
+      }
     });
   });
 

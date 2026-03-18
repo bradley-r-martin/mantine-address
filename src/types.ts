@@ -1,3 +1,5 @@
+import type { Country, Region } from './regions';
+
 export interface AddressSuggestion {
   id: string;
   label: string;
@@ -33,7 +35,40 @@ export interface Address {
  */
 export type AddressDetails = Address;
 
+/**
+ * Optional restrictions to limit which addresses are acceptable.
+ * All comparisons use normalised values (trim, case-insensitive for codes/labels).
+ * An address is allowed only if it satisfies every non-empty restriction (AND semantics).
+ * When using allowedRegions (e.g. [REGIONS.NEW_SOUTH_WALES]), also set allowedCountries (e.g. [COUNTRIES.AU]).
+ */
+export interface AddressRestrictions {
+  /** Allowed countries (e.g. [COUNTRIES.AU, COUNTRIES.NZ]). Required when using allowedRegions. */
+  allowedCountries?: (string | Country)[];
+  /** Allowed state/territory codes (e.g. ['NSW', 'VIC']). */
+  allowedStates?: string[];
+  /** Allowed regions (state/province with location bias). Use with allowedCountries. */
+  allowedRegions?: Region[];
+  /** Allowed postcode strings. */
+  allowedPostcodes?: string[];
+  /** Allowed suburb names. */
+  allowedSuburbs?: string[];
+}
+
+/** Options passed to getSuggestions so providers can filter server-side (e.g. by country). */
+export interface GetSuggestionsOptions {
+  restrictions?: AddressRestrictions;
+}
+
 export interface AddressLookupProvider {
-  getSuggestions(input: string): Promise<AddressSuggestion[]>;
+  /**
+   * Fetch address suggestions for the given input.
+   * When options.restrictions is provided, the provider may use it to filter results
+   * (e.g. Google Places componentRestrictions by country). Client-side validation
+   * still runs on selection; this allows providers to reduce irrelevant suggestions.
+   */
+  getSuggestions(
+    input: string,
+    options?: GetSuggestionsOptions
+  ): Promise<AddressSuggestion[]>;
   getDetails(id: string): Promise<Address>;
 }

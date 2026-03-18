@@ -4,8 +4,13 @@ export interface Country {
   name: string;
 }
 
-/** State/territory option for use in a State select (code + display name). */
-export interface StateOption {
-  code: string;
+/** Region (state/province) with location for autocomplete bias. Your REGIONS use this shape. */
+export interface Region {
   name: string;
+  abbreviation: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    radius: number;
+  };
 }
