@@ -17,7 +17,7 @@ import {
 } from './addressFixtures';
 
 const meta: Meta = {
-  title: 'Address Formatting / International',
+  title: 'Formatting/International',
   tags: ['autodocs'],
   parameters: {
     docs: {
