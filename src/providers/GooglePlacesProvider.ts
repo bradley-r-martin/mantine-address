@@ -79,26 +79,30 @@ export class GooglePlacesProvider implements AddressLookupProvider {
       types: ['address'],
     };
 
-    const res = options?.restrictions;
+    const accept = options?.accept;
 
-    // Country restriction (from allowedCountries or when using allowedRegions, pass allowedCountries too).
-    const countries =
-      res?.allowedCountries?.length &&
-      res.allowedCountries.map((c) =>
-        (typeof c === 'string' ? c : c.code).trim().toLowerCase()
-      );
-    if (countries) {
-      request.componentRestrictions = { country: countries };
+    // Single country restriction.
+    if (accept?.country) {
+      const code = (
+        typeof accept.country === 'string'
+          ? accept.country
+          : accept.country.code
+      )
+        .trim()
+        .toLowerCase();
+      if (code) {
+        request.componentRestrictions = { country: [code] };
+      }
     }
 
-    // Location bias from first allowedRegion's location (latitude, longitude, radius in meters).
-    const firstRegion = res?.allowedRegions?.[0];
-    if (firstRegion?.location) {
+    // Location bias from accept.region when it provides a Region object with location.
+    const region = accept?.region;
+    if (region && typeof region === 'object' && region.location) {
       request.location = new google.maps.LatLng(
-        firstRegion.location.latitude,
-        firstRegion.location.longitude
+        region.location.latitude,
+        region.location.longitude
       );
-      request.radius = firstRegion.location.radius;
+      request.radius = region.location.radius;
     }
 
     return new Promise((resolve, reject) => {

@@ -10,8 +10,8 @@ export type {
 } from './formatters';
 
 export type {
+  AcceptAddress,
   Address,
-  AddressRestrictions,
   AddressSuggestion,
   AddressDetails,
   GetSuggestionsOptions,

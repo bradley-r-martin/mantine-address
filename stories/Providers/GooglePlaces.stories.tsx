@@ -7,8 +7,7 @@ import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
 import { international } from '@/formatters';
 import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
-import { COUNTRIES } from '@/regions';
-import AUSTRALIA from '@/regions/states-au';
+import { COUNTRIES, REGIONS } from '@/regions';
 
 const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
   | string
@@ -194,27 +193,27 @@ export const Default: Story = {
   },
 };
 
-export const RestrictionsCountryAU: Story = {
-  name: 'Restrictions: Australia only',
+export const AcceptCountryAU: Story = {
+  name: 'Accept: Australia only',
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
     label: 'Address (Australia only)',
     placeholder: 'Type an address in Australia…',
-    restrictions: { allowedCountries: [COUNTRIES.AU] },
+    accept: { country: COUNTRIES.AU },
   },
 };
 
-export const RestrictionsRegionNSW: Story = {
-  name: 'Restrictions: NSW only',
+export const AcceptRegionNSW: Story = {
+  name: 'Accept: NSW only',
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
     label: 'Address (NSW only)',
     placeholder: 'Type an address in NSW, Australia…',
-    restrictions: {
-      allowedCountries: [COUNTRIES.AU],
-      allowedRegions: [AUSTRALIA.REGIONS.NEW_SOUTH_WALES],
+    accept: {
+      country: COUNTRIES.AU,
+      region: REGIONS.NEW_SOUTH_WALES,
     },
     defaultAddress: { country: 'AU', state: 'NSW' },
   },

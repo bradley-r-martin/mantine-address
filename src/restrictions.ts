@@ -1,62 +1,43 @@
-import type { Address, AddressRestrictions } from './types';
+import type { AcceptAddress, Address } from './types';
 
 function normaliseCode(s: string): string {
   return s.trim().toUpperCase();
 }
 
-function normaliseLabel(s: string): string {
-  return s.trim().toLowerCase();
+function acceptCountryCode(accept: AcceptAddress): string | undefined {
+  const c = accept.country;
+  if (c == null || c === '') return undefined;
+  return normaliseCode(typeof c === 'string' ? c : c.code);
+}
+
+function acceptRegionAbbreviation(accept: AcceptAddress): string | undefined {
+  const r = accept.region;
+  if (r == null || r === '') return undefined;
+  return normaliseCode(typeof r === 'string' ? r : r.abbreviation);
 }
 
 /**
- * Returns whether the address satisfies all non-empty restrictions.
- * Uses normalised comparison: trim, case-insensitive for country/state codes and for postcode/suburb labels.
- * When allowedRegions is set, state must match one region's abbreviation; use with allowedCountries.
+ * Returns whether the address satisfies the accept filter (single country, optional single region).
+ * Uses normalised comparison: trim, case-insensitive for country/state codes.
  */
 export function addressSatisfiesRestrictions(
   address: Address,
-  restrictions: AddressRestrictions | undefined
+  accept: AcceptAddress | undefined
 ): boolean {
-  if (!restrictions) return true;
+  if (!accept) return true;
 
-  const {
-    allowedCountries,
-    allowedStates,
-    allowedRegions,
-    allowedPostcodes,
-    allowedSuburbs,
-  } = restrictions;
-
-  if (allowedCountries?.length) {
-    const set = new Set(
-      allowedCountries.map((c) =>
-        normaliseCode(typeof c === 'string' ? c : c.code)
-      )
-    );
-    const country = address.country?.trim();
-    if (!country || !set.has(normaliseCode(country))) return false;
+  const countryCode = acceptCountryCode(accept);
+  if (countryCode) {
+    const addressCountry = address.country?.trim();
+    if (!addressCountry || normaliseCode(addressCountry) !== countryCode)
+      return false;
   }
 
-  const stateSet = allowedRegions?.length
-    ? new Set(allowedRegions.map((r) => normaliseCode(r.abbreviation)))
-    : allowedStates?.length
-      ? new Set(allowedStates.map((s) => normaliseCode(s)))
-      : null;
-  if (stateSet) {
-    const state = address.state?.trim();
-    if (!state || !stateSet.has(normaliseCode(state))) return false;
-  }
-
-  if (allowedPostcodes?.length) {
-    const set = new Set(allowedPostcodes.map((p) => normaliseLabel(p)));
-    const postcode = address.postcode?.trim();
-    if (!postcode || !set.has(normaliseLabel(postcode))) return false;
-  }
-
-  if (allowedSuburbs?.length) {
-    const set = new Set(allowedSuburbs.map((s) => normaliseLabel(s)));
-    const suburb = address.suburb?.trim();
-    if (!suburb || !set.has(normaliseLabel(suburb))) return false;
+  const regionAbbr = acceptRegionAbbreviation(accept);
+  if (regionAbbr) {
+    const addressState = address.state?.trim();
+    if (!addressState || normaliseCode(addressState) !== regionAbbr)
+      return false;
   }
 
   return true;

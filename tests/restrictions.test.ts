@@ -1,259 +1,110 @@
 import { describe, it, expect } from 'vitest';
 import { addressSatisfiesRestrictions } from '@/restrictions';
-import type { Address, AddressRestrictions } from '@/types';
+import type { AcceptAddress } from '@/types';
 import { COUNTRIES, REGIONS } from '@/regions';
 
 describe('addressSatisfiesRestrictions', () => {
-  it('returns true when restrictions is undefined', () => {
+  it('returns true when accept is undefined', () => {
     expect(
       addressSatisfiesRestrictions({ country: 'AU', state: 'NSW' }, undefined)
     ).toBe(true);
   });
 
-  it('returns true when all restriction arrays are empty or undefined', () => {
-    const r: AddressRestrictions = {};
+  it('returns true when accept is empty', () => {
+    const accept: AcceptAddress = {};
     expect(
-      addressSatisfiesRestrictions(
-        { country: 'AU', state: 'NSW', postcode: '2000', suburb: 'Sydney' },
-        r
-      )
-    ).toBe(true);
-    expect(
-      addressSatisfiesRestrictions(
-        { country: 'US' },
-        { allowedCountries: [], allowedStates: [] }
-      )
+      addressSatisfiesRestrictions({ country: 'AU', state: 'NSW' }, accept)
     ).toBe(true);
   });
 
-  describe('allowedCountries only', () => {
-    const restrictions: AddressRestrictions = {
-      allowedCountries: [COUNTRIES.AU, COUNTRIES.NZ],
-    };
+  describe('accept.country only', () => {
+    const accept: AcceptAddress = { country: COUNTRIES.AU };
 
-    it('passes when address country is in the list', () => {
+    it('passes when address country matches', () => {
+      expect(addressSatisfiesRestrictions({ country: 'AU' }, accept)).toBe(
+        true
+      );
+      expect(addressSatisfiesRestrictions({ country: 'au' }, accept)).toBe(
+        true
+      );
+      expect(addressSatisfiesRestrictions({ country: '  AU  ' }, accept)).toBe(
+        true
+      );
       expect(
-        addressSatisfiesRestrictions({ country: 'AU' }, restrictions)
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions({ country: 'NZ' }, restrictions)
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions({ country: 'au' }, restrictions)
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions({ country: '  AU  ' }, restrictions)
+        addressSatisfiesRestrictions({ country: 'AU' }, { country: 'AU' })
       ).toBe(true);
     });
 
-    it('fails when address country is not in the list', () => {
-      expect(
-        addressSatisfiesRestrictions({ country: 'US' }, restrictions)
-      ).toBe(false);
-      expect(
-        addressSatisfiesRestrictions({ country: 'GB' }, restrictions)
-      ).toBe(false);
-    });
-
-    it('fails when address has no country', () => {
-      expect(addressSatisfiesRestrictions({}, restrictions)).toBe(false);
-      expect(addressSatisfiesRestrictions({ country: '' }, restrictions)).toBe(
+    it('fails when address country does not match', () => {
+      expect(addressSatisfiesRestrictions({ country: 'US' }, accept)).toBe(
+        false
+      );
+      expect(addressSatisfiesRestrictions({ country: 'NZ' }, accept)).toBe(
         false
       );
     });
-  });
 
-  describe('country + state (AND semantics)', () => {
-    const restrictions: AddressRestrictions = {
-      allowedCountries: [COUNTRIES.AU],
-      allowedStates: ['NSW', 'VIC'],
-    };
-
-    it('passes when both country and state are allowed', () => {
-      expect(
-        addressSatisfiesRestrictions(
-          { country: 'AU', state: 'NSW' },
-          restrictions
-        )
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions(
-          { country: 'AU', state: 'VIC' },
-          restrictions
-        )
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions(
-          { country: 'au', state: 'nsw' },
-          restrictions
-        )
-      ).toBe(true);
-    });
-
-    it('fails when state is not in allowed list', () => {
-      expect(
-        addressSatisfiesRestrictions(
-          { country: 'AU', state: 'QLD' },
-          restrictions
-        )
-      ).toBe(false);
-    });
-
-    it('fails when country is not in allowed list', () => {
-      expect(
-        addressSatisfiesRestrictions(
-          { country: 'US', state: 'NSW' },
-          restrictions
-        )
-      ).toBe(false);
-    });
-
-    it('fails when address has no state', () => {
-      expect(
-        addressSatisfiesRestrictions({ country: 'AU' }, restrictions)
-      ).toBe(false);
-      expect(
-        addressSatisfiesRestrictions({ country: 'AU', state: '' }, restrictions)
-      ).toBe(false);
+    it('fails when address has no country', () => {
+      expect(addressSatisfiesRestrictions({}, accept)).toBe(false);
+      expect(addressSatisfiesRestrictions({ country: '' }, accept)).toBe(false);
     });
   });
 
-  describe('allowedRegions', () => {
-    const restrictions: AddressRestrictions = {
-      allowedCountries: [COUNTRIES.AU],
-      allowedRegions: [REGIONS.NEW_SOUTH_WALES],
+  describe('accept.country + accept.region (AND semantics)', () => {
+    const accept: AcceptAddress = {
+      country: COUNTRIES.AU,
+      region: REGIONS.NEW_SOUTH_WALES,
     };
 
-    it('passes when address country and state match a region', () => {
+    it('passes when both country and state match', () => {
       expect(
-        addressSatisfiesRestrictions(
-          { country: 'AU', state: 'NSW' },
-          restrictions
-        )
+        addressSatisfiesRestrictions({ country: 'AU', state: 'NSW' }, accept)
       ).toBe(true);
       expect(
-        addressSatisfiesRestrictions(
-          { country: 'au', state: 'nsw' },
-          restrictions
-        )
+        addressSatisfiesRestrictions({ country: 'au', state: 'nsw' }, accept)
       ).toBe(true);
     });
 
-    it('fails when state does not match any region', () => {
+    it('fails when state does not match', () => {
       expect(
-        addressSatisfiesRestrictions(
-          { country: 'AU', state: 'VIC' },
-          restrictions
-        )
+        addressSatisfiesRestrictions({ country: 'AU', state: 'VIC' }, accept)
+      ).toBe(false);
+      expect(
+        addressSatisfiesRestrictions({ country: 'AU', state: 'QLD' }, accept)
       ).toBe(false);
     });
 
     it('fails when country does not match', () => {
       expect(
-        addressSatisfiesRestrictions(
-          { country: 'US', state: 'NSW' },
-          restrictions
-        )
-      ).toBe(false);
-    });
-  });
-
-  describe('allowedPostcodes', () => {
-    const restrictions: AddressRestrictions = {
-      allowedPostcodes: ['2000', '2001'],
-    };
-
-    it('passes when postcode is in the list (case-insensitive, trim)', () => {
-      expect(
-        addressSatisfiesRestrictions({ postcode: '2000' }, restrictions)
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions({ postcode: '  2001  ' }, restrictions)
-      ).toBe(true);
-    });
-
-    it('fails when postcode is not in the list', () => {
-      expect(
-        addressSatisfiesRestrictions({ postcode: '3000' }, restrictions)
+        addressSatisfiesRestrictions({ country: 'US', state: 'NSW' }, accept)
       ).toBe(false);
     });
 
-    it('fails when address has no postcode', () => {
-      expect(addressSatisfiesRestrictions({}, restrictions)).toBe(false);
-      expect(addressSatisfiesRestrictions({ postcode: '' }, restrictions)).toBe(
+    it('fails when address has no state', () => {
+      expect(addressSatisfiesRestrictions({ country: 'AU' }, accept)).toBe(
         false
       );
+      expect(
+        addressSatisfiesRestrictions({ country: 'AU', state: '' }, accept)
+      ).toBe(false);
     });
   });
 
-  describe('allowedSuburbs', () => {
-    const restrictions: AddressRestrictions = {
-      allowedSuburbs: ['Sydney', 'Melbourne'],
+  describe('accept.region as string abbreviation', () => {
+    const accept: AcceptAddress = {
+      country: 'AU',
+      region: 'NSW',
     };
 
-    it('passes when suburb is in the list (case-insensitive, trim)', () => {
+    it('passes when address state matches abbreviation', () => {
       expect(
-        addressSatisfiesRestrictions({ suburb: 'Sydney' }, restrictions)
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions({ suburb: 'sydney' }, restrictions)
-      ).toBe(true);
-      expect(
-        addressSatisfiesRestrictions({ suburb: '  Melbourne  ' }, restrictions)
+        addressSatisfiesRestrictions({ country: 'AU', state: 'NSW' }, accept)
       ).toBe(true);
     });
 
-    it('fails when suburb is not in the list', () => {
+    it('fails when address state does not match', () => {
       expect(
-        addressSatisfiesRestrictions({ suburb: 'Brisbane' }, restrictions)
-      ).toBe(false);
-    });
-
-    it('fails when address has no suburb', () => {
-      expect(addressSatisfiesRestrictions({}, restrictions)).toBe(false);
-    });
-  });
-
-  describe('all restrictions combined (AND semantics)', () => {
-    const restrictions: AddressRestrictions = {
-      allowedCountries: [COUNTRIES.AU],
-      allowedStates: ['NSW'],
-      allowedPostcodes: ['2000'],
-      allowedSuburbs: ['Sydney'],
-    };
-
-    it('passes only when every non-empty restriction is satisfied', () => {
-      const full: Address = {
-        country: 'AU',
-        state: 'NSW',
-        postcode: '2000',
-        suburb: 'Sydney',
-      };
-      expect(addressSatisfiesRestrictions(full, restrictions)).toBe(true);
-    });
-
-    it('fails if any dimension fails', () => {
-      expect(
-        addressSatisfiesRestrictions(
-          {
-            country: 'AU',
-            state: 'NSW',
-            postcode: '2000',
-            suburb: 'Brisbane',
-          },
-          restrictions
-        )
-      ).toBe(false);
-      expect(
-        addressSatisfiesRestrictions(
-          {
-            country: 'AU',
-            state: 'NSW',
-            postcode: '3000',
-            suburb: 'Sydney',
-          },
-          restrictions
-        )
+        addressSatisfiesRestrictions({ country: 'AU', state: 'VIC' }, accept)
       ).toBe(false);
     });
   });

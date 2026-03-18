@@ -242,7 +242,7 @@ describe('AddressInput', () => {
       expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
     });
 
-    it('no provider: manual submit with address failing restrictions shows error and does not call onChange', async () => {
+    it('no provider: manual submit with address failing accept shows error and does not call onChange', async () => {
       const onChange = vi.fn();
       render(
         <MantineProvider>
@@ -250,9 +250,9 @@ describe('AddressInput', () => {
             {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
-            restrictions={{
-              allowedCountries: [COUNTRIES.AU],
-              allowedPostcodes: ['2000'],
+            accept={{
+              country: COUNTRIES.GB,
+              region: 'England',
             }}
             onChange={onChange}
           />
@@ -274,19 +274,11 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(100);
       });
       await act(async () => {
-        fireEvent.click(screen.getByRole('option', { name: 'Australia' }));
+        fireEvent.click(screen.getByRole('option', { name: 'United Kingdom' }));
       });
       await act(async () => {
-        fireEvent.click(within(modal).getByLabelText('State / Province'));
-      });
-      await act(async () => {
-        fireEvent.click(
-          screen.getByRole('option', { name: 'New South Wales' })
-        );
-      });
-      await act(async () => {
-        fireEvent.change(within(modal).getByLabelText('Postcode'), {
-          target: { value: '3000' },
+        fireEvent.change(within(modal).getByLabelText('State / Province'), {
+          target: { value: 'Wales' },
         });
       });
       await act(async () => {
@@ -310,7 +302,7 @@ describe('AddressInput', () => {
       ).toBeInTheDocument();
     });
 
-    it('no provider: manual submit with address passing restrictions calls onChange and closes modal', async () => {
+    it('no provider: manual submit with address passing accept calls onChange and closes modal', async () => {
       const onChange = vi.fn();
       render(
         <MantineProvider>
@@ -318,7 +310,7 @@ describe('AddressInput', () => {
             {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
-            restrictions={{ allowedCountries: [COUNTRIES.AU] }}
+            accept={{ country: COUNTRIES.AU }}
             onChange={onChange}
           />
         </MantineProvider>
@@ -805,7 +797,7 @@ describe('AddressInput', () => {
       });
 
       expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
-        restrictions: undefined,
+        accept: undefined,
       });
     });
 
@@ -826,7 +818,7 @@ describe('AddressInput', () => {
         vi.advanceTimersByTime(1);
       });
       expect(provider.getSuggestions).toHaveBeenCalledWith('test', {
-        restrictions: undefined,
+        accept: undefined,
       });
     });
 
@@ -845,7 +837,7 @@ describe('AddressInput', () => {
 
       expect(provider.getSuggestions).toHaveBeenCalledTimes(1);
       expect(provider.getSuggestions).toHaveBeenCalledWith('123', {
-        restrictions: undefined,
+        accept: undefined,
       });
     });
   });
@@ -958,7 +950,7 @@ describe('AddressInput', () => {
       }
       // getSuggestions is the minimum verifiable behavior when jsdom doesn't render options
       expect(provider.getSuggestions).toHaveBeenCalledWith('123', {
-        restrictions: undefined,
+        accept: undefined,
       });
     });
 
@@ -981,7 +973,7 @@ describe('AddressInput', () => {
 
       expect(document.querySelectorAll('mark')).toHaveLength(0);
       expect(provider.getSuggestions).toHaveBeenCalledWith('123', {
-        restrictions: undefined,
+        accept: undefined,
       });
     });
   });
@@ -1076,7 +1068,7 @@ describe('AddressInput', () => {
       await act(async () => {});
 
       expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
-        restrictions: undefined,
+        accept: undefined,
       });
 
       const options = screen.queryAllByRole('option');
@@ -1108,14 +1100,14 @@ describe('AddressInput', () => {
       expect(provider.getSuggestions).toHaveBeenCalled();
     });
 
-    it('when restrictions set and selected suggestion resolves to address outside restrictions: shows error and does not call onChange with address', async () => {
+    it('when accept set and selected suggestion resolves to address outside accept: shows error and does not call onChange with address', async () => {
       const provider = createMockProvider();
       const onChange = vi.fn();
-      const restrictions = { allowedCountries: [COUNTRIES.AU] as const };
+      const accept = { country: COUNTRIES.AU as const };
       renderComponent({
         provider,
         onChange,
-        restrictions,
+        accept,
       });
 
       fireEvent.change(screen.getByRole('textbox'), {
@@ -1127,7 +1119,7 @@ describe('AddressInput', () => {
       await act(async () => {});
 
       expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
-        restrictions,
+        accept,
       });
 
       const options = screen.queryAllByRole('option');
@@ -1144,14 +1136,14 @@ describe('AddressInput', () => {
       }
     });
 
-    it('when restrictions set and selected suggestion passes restrictions: calls onChange', async () => {
+    it('when accept set and selected suggestion passes accept: calls onChange', async () => {
       const provider = createMockProvider();
       const onChange = vi.fn();
-      const restrictions = { allowedCountries: [COUNTRIES.US] as const };
+      const accept = { country: COUNTRIES.US as const };
       renderComponent({
         provider,
         onChange,
-        restrictions,
+        accept,
       });
 
       fireEvent.change(screen.getByRole('textbox'), {
@@ -1163,7 +1155,7 @@ describe('AddressInput', () => {
       await act(async () => {});
 
       expect(provider.getSuggestions).toHaveBeenCalledWith('123 Main', {
-        restrictions,
+        accept,
       });
 
       const options = screen.queryAllByRole('option');

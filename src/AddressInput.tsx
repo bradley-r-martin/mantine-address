@@ -18,9 +18,9 @@ import {
 } from '@mantine/core';
 import type { Factory } from '@mantine/core';
 import type {
+  AcceptAddress,
   Address,
   AddressLookupProvider,
-  AddressRestrictions,
   AddressSuggestion,
 } from './types';
 import { international, type AddressFormatProvider } from './formatters';
@@ -57,7 +57,7 @@ const ENTER_MANUALLY_VALUE = '__mantine-address-enter-manually__';
 
 export interface AddressInputProps extends Omit<
   AutocompleteProps,
-  'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue'
+  'data' | 'onOptionSubmit' | 'onChange' | 'value' | 'defaultValue' | 'accept'
 > {
   /** Lookup provider for address suggestions and details. When absent, the component operates in manual-only mode (input enabled, focus/click opens manual-entry modal). */
   provider?: AddressLookupProvider | null;
@@ -98,10 +98,10 @@ export interface AddressInputProps extends Omit<
    */
   defaultAddress?: Partial<Address>;
   /**
-   * Optional restrictions (allowed countries, states, postcodes, suburbs). When set, only addresses
-   * satisfying all non-empty restrictions are accepted (autocomplete selection and manual submit).
+   * Optional accept filter (single country, optional single region). When set, only addresses
+   * matching the given country and optionally region are accepted (autocomplete selection and manual submit).
    */
-  restrictions?: AddressRestrictions;
+  accept?: AcceptAddress;
 }
 
 export interface AddressInputRef extends HTMLInputElement {
@@ -191,7 +191,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     rightSection,
     nothingFoundMessage,
     defaultAddress,
-    restrictions,
+    accept,
     error: errorProp,
     ...rest
   } = props;
@@ -276,7 +276,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     if (manualFormPostcode.trim()) address.postcode = manualFormPostcode.trim();
     if (manualFormCountry.trim()) address.country = manualFormCountry.trim();
 
-    if (restrictions && !addressSatisfiesRestrictions(address, restrictions)) {
+    if (accept && !addressSatisfiesRestrictions(address, accept)) {
       setManualFormError(RESTRICTION_ERROR_MESSAGE);
       return;
     }
@@ -350,7 +350,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
 
         provider
           .getSuggestions(value, {
-            restrictions: restrictions ?? undefined,
+            accept: accept ?? undefined,
           })
           .then((results) => {
             if (requestIdRef.current !== currentId) return;
@@ -379,10 +379,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     provider
       .getDetails(suggestion.id)
       .then((address) => {
-        if (
-          restrictions &&
-          !addressSatisfiesRestrictions(address, restrictions)
-        ) {
+        if (accept && !addressSatisfiesRestrictions(address, accept)) {
           setRestrictionError(RESTRICTION_ERROR_MESSAGE);
           return;
         }
@@ -395,32 +392,35 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       .catch(() => {});
   };
 
-  const allowedCountrySet =
-    restrictions?.allowedCountries?.length &&
-    new Set(
-      restrictions.allowedCountries.map((c) =>
-        (typeof c === 'string' ? c : c.code).trim().toUpperCase()
+  const acceptCountryCode = accept?.country
+    ? (typeof accept.country === 'string'
+        ? accept.country
+        : accept.country.code
       )
-    );
+        .trim()
+        .toUpperCase()
+    : null;
   const manualCountryList = (
-    allowedCountrySet
-      ? countries.filter((c) => allowedCountrySet.has(c.code))
+    acceptCountryCode
+      ? countries.filter((c) => c.code.toUpperCase() === acceptCountryCode)
       : countries
   ).map((c) => ({ value: c.code, label: c.name }));
 
-  const stateOptionsRaw = getStatesForCountry(manualFormCountry);
-  const allowedStateSet = restrictions?.allowedRegions?.length
-    ? new Set(
-        restrictions.allowedRegions.map((r) =>
-          r.abbreviation.trim().toUpperCase()
-        )
+  const acceptRegionAbbr = accept?.region
+    ? (typeof accept.region === 'string'
+        ? accept.region
+        : accept.region.abbreviation
       )
-    : restrictions?.allowedStates?.length &&
-      new Set(restrictions.allowedStates.map((s) => s.trim().toUpperCase()));
+        .trim()
+        .toUpperCase()
+    : null;
+  const stateOptionsRaw = getStatesForCountry(manualFormCountry);
   const manualStateList = (
     stateOptionsRaw
-      ? allowedStateSet
-        ? stateOptionsRaw.filter((s) => allowedStateSet.has(s.code))
+      ? acceptRegionAbbr
+        ? stateOptionsRaw.filter(
+            (s) => s.code.toUpperCase() === acceptRegionAbbr
+          )
         : stateOptionsRaw
       : undefined
   )?.map((s) => ({ value: s.code, label: s.name }));

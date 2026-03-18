@@ -36,33 +36,26 @@ export interface Address {
 export type AddressDetails = Address;
 
 /**
- * Optional restrictions to limit which addresses are acceptable.
- * All comparisons use normalised values (trim, case-insensitive for codes/labels).
- * An address is allowed only if it satisfies every non-empty restriction (AND semantics).
- * When using allowedRegions (e.g. [REGIONS.NEW_SOUTH_WALES]), also set allowedCountries (e.g. [COUNTRIES.AU]).
+ * Optional accept filter: at most one country and one region/state.
+ * When set, only addresses matching the given country (and optionally region) are accepted.
+ * Use with AddressInput and provider getSuggestions options.
  */
-export interface AddressRestrictions {
-  /** Allowed countries (e.g. [COUNTRIES.AU, COUNTRIES.NZ]). Required when using allowedRegions. */
-  allowedCountries?: (string | Country)[];
-  /** Allowed state/territory codes (e.g. ['NSW', 'VIC']). */
-  allowedStates?: string[];
-  /** Allowed regions (state/province with location bias). Use with allowedCountries. */
-  allowedRegions?: Region[];
-  /** Allowed postcode strings. */
-  allowedPostcodes?: string[];
-  /** Allowed suburb names. */
-  allowedSuburbs?: string[];
+export interface AcceptAddress {
+  /** Allowed country (ISO 3166-1 alpha-2 code or Country object). */
+  country?: string | Country;
+  /** Allowed region/state (abbreviation or Region object; Region provides location for provider bias). */
+  region?: string | Region;
 }
 
 /** Options passed to getSuggestions so providers can filter server-side (e.g. by country). */
 export interface GetSuggestionsOptions {
-  restrictions?: AddressRestrictions;
+  accept?: AcceptAddress;
 }
 
 export interface AddressLookupProvider {
   /**
    * Fetch address suggestions for the given input.
-   * When options.restrictions is provided, the provider may use it to filter results
+   * When options.accept is provided, the provider may use it to filter results
    * (e.g. Google Places componentRestrictions by country). Client-side validation
    * still runs on selection; this allows providers to reduce irrelevant suggestions.
    */
