@@ -31,7 +31,21 @@ function setupGoogleMock(overrides?: Partial<GoogleMock['maps']['places']>): {
     ...overrides,
   };
 
-  (window as Window & { google?: unknown }).google = { maps: { places } };
+  const LatLng = vi.fn(function (
+    this: { lat: number; lng: number },
+    lat: number,
+    lng: number
+  ) {
+    this.lat = lat;
+    this.lng = lng;
+  });
+  (
+    window as Window & {
+      google?: { maps: { places: typeof places; LatLng: typeof LatLng } };
+    }
+  ).google = {
+    maps: { places, LatLng },
+  };
 
   return { mockGetPlacePredictions, mockGetDetails };
 }
@@ -162,6 +176,61 @@ describe('GooglePlacesProvider', () => {
       await expect(provider.getSuggestions('test')).rejects.toThrow(
         'Google Maps JavaScript API is not loaded'
       );
+    });
+
+    it('passes single country in componentRestrictions when accept.country is set', async () => {
+      const { mockGetPlacePredictions } = setupGoogleMock();
+      mockGetPlacePredictions.mockImplementation(
+        (
+          req: { componentRestrictions?: { country: string[] } },
+          cb: (predictions: unknown, status: string) => void
+        ) => {
+          expect(req.componentRestrictions).toEqual({ country: ['au'] });
+          cb([], 'OK');
+        }
+      );
+
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      await provider.getSuggestions('123 Main', {
+        accept: { country: 'AU' },
+      });
+
+      expect(mockGetPlacePredictions).toHaveBeenCalled();
+    });
+
+    it('passes location and radius when accept.region is a Region object with location', async () => {
+      const { mockGetPlacePredictions } = setupGoogleMock();
+      mockGetPlacePredictions.mockImplementation(
+        (
+          req: { location?: { lat: number; lng: number }; radius?: number },
+          cb: (predictions: unknown, status: string) => void
+        ) => {
+          expect(req.componentRestrictions).toEqual({ country: ['au'] });
+          expect(req.location).toBeDefined();
+          expect((req.location as { lat: number; lng: number }).lat).toBe(
+            -33.8688
+          );
+          expect((req.location as { lat: number; lng: number }).lng).toBe(
+            151.2093
+          );
+          expect(req.radius).toBe(1000);
+          cb([], 'OK');
+        }
+      );
+
+      const provider = new GooglePlacesProvider({ apiKey: 'KEY' });
+      await provider.getSuggestions('123 Main', {
+        accept: {
+          country: 'AU',
+          region: {
+            name: 'New South Wales',
+            abbreviation: 'NSW',
+            location: { latitude: -33.8688, longitude: 151.2093, radius: 1000 },
+          },
+        },
+      });
+
+      expect(mockGetPlacePredictions).toHaveBeenCalled();
     });
   });
 

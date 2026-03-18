@@ -1,14 +1,10 @@
-# address-restrictions Specification
+# address-restrictions Specification (Delta)
 
-## Purpose
-
-Defines how the component restricts which addresses are acceptable via the optional `accept` prop (single country, optional single region). Replaces the previous restrictions API.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Component accepts address restrictions
 
-The component SHALL accept an optional `accept` prop of the form `{ country?: string | Country; region?: string | Region }`. When set, only addresses that match the given country (and optionally the given region/state) SHALL be accepted. An address SHALL be accepted only if: (1) when `accept.country` is set, the address's country matches that value (normalised, case-insensitive); (2) when `accept.region` is set, the address's state matches the region's abbreviation or the string value (normalised). An address that does not satisfy these conditions SHALL be treated as invalid: the component SHALL NOT call `onChange` with that address, and SHALL display a validation error (e.g. on the component or in the manual form).
+The component SHALL accept an optional `accept` prop of the form `{ country?: string | Country; region?: string | Region }`. When set, only addresses that match the given country (and optionally the given region/state) SHALL be accepted. An address SHALL be accepted only if: (1) when `accept.country` is set, the address’s country matches that value (normalised, case-insensitive); (2) when `accept.region` is set, the address’s state matches the region’s abbreviation or the string value (normalised). An address that does not satisfy these conditions SHALL be treated as invalid: the component SHALL NOT call `onChange` with that address, and SHALL display a validation error (e.g. on the component or in the manual form).
 
 #### Scenario: Accept prop is omitted
 
@@ -50,7 +46,7 @@ The component SHALL accept an optional `accept` prop of the form `{ country?: st
 
 ### Requirement: Manual form country and state options respect accept
 
-When `accept.country` is set, the manual-entry form's Country select SHALL list only that country (or the single matching country from the library's canonical list). When `accept.region` is set and the State field is a select (e.g. for Australia or United States), the State select SHALL list only the state corresponding to that region (e.g. the region's abbreviation). When the State field is a text input (country with no state list), the entered state SHALL be validated on submit against `accept.region` if provided (e.g. string comparison to the abbreviation).
+When `accept.country` is set, the manual-entry form's Country select SHALL list only that country (or the single matching country from the library's canonical list). When `accept.region` is set and the State field is a select (e.g. for Australia or United States), the State select SHALL list only the state corresponding to that region (e.g. the region’s abbreviation). When the State field is a text input (country with no state list), the entered state SHALL be validated on submit against `accept.region` if provided (e.g. string comparison to the abbreviation).
 
 #### Scenario: Country select shows only accepted country
 
@@ -63,3 +59,17 @@ When `accept.country` is set, the manual-entry form's Country select SHALL list 
 - **WHEN** the consumer passes `accept={{ country: 'AU', region: REGIONS.NEW_SOUTH_WALES }}` (or `region: 'NSW'`), the user opens the manual-entry modal and the country has a state list (e.g. Australia)
 - **THEN** the State select SHALL show only the state for the accepted region (e.g. NSW)
 - **THEN** the user SHALL NOT be able to select a state outside the accepted region from the dropdown
+
+## REMOVED Requirements
+
+### Requirement: Restrictions prop with multiple countries, states, postcodes, suburbs
+
+**Reason:** Replaced by the single `accept` prop with at most one country and one region. Postcode and suburb filtering are not supported by providers and are out of scope for the simplified API.
+
+**Migration:** Use `accept={{ country: string | Country, region?: string | Region }}` instead of `restrictions={{ allowedCountries, allowedRegions | allowedStates, ... }}`. For postcode or suburb filtering, validate the address in the consumer (e.g. in `onChange`) or restrict manually-entered options outside the component.
+
+### Requirement: Postcode and suburb validated on submit
+
+**Reason:** Postcode and suburb are no longer part of the component’s acceptance criteria.
+
+**Migration:** After receiving an address in `onChange`, check `address.postcode` and `address.suburb` in the consumer and show an error or reject the address if they fall outside allowed values.

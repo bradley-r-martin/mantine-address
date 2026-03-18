@@ -14,7 +14,7 @@ const meta: Meta<typeof AddressInput> = {
     docs: {
       description: {
         component:
-          'Examples of restricting which addresses are accepted (country/region/state/postcode). These stories are provider-agnostic (manual-only or mock provider).',
+          'Examples of restricting which addresses are accepted via the `accept` prop (single country, optional single region). Provider-agnostic (manual-only or mock provider).',
       },
     },
   },
@@ -35,15 +35,14 @@ export const AustraliaOnly: Story = {
   render: () => (
     <Stack gap="xs" style={{ maxWidth: 480 }}>
       <Text size="sm" c="dimmed">
-        <Code>restrictions={'{{ allowedCountries: [COUNTRIES.AU] }}'}</Code> —
-        Country dropdown shows only Australia. Manual submit validated on
-        submit.
+        <Code>accept={'{{ country: COUNTRIES.AU }}'}</Code> — Country dropdown
+        shows only Australia. Manual submit validated on submit.
       </Text>
       <AddressInput
         {...({ provider: null } as unknown as ComponentProps<
           typeof AddressInput
         >)}
-        restrictions={{ allowedCountries: [COUNTRIES.AU] }}
+        accept={{ country: COUNTRIES.AU }}
         label="Address (Australia only)"
         placeholder="Click to enter address…"
         onChange={(address) => console.log('Address:', address)}
@@ -52,16 +51,14 @@ export const AustraliaOnly: Story = {
   ),
 };
 
-export const AllowedRegionsNSW: Story = {
-  name: 'allowedRegions (REGIONS.NEW_SOUTH_WALES)',
+export const AcceptRegionNSW: Story = {
+  name: 'accept with region (NSW)',
   render: () => (
     <Stack gap="xs" style={{ maxWidth: 480 }}>
       <Text size="sm" c="dimmed">
         <Code>
-          restrictions=
-          {
-            '{{ allowedCountries: [COUNTRIES.AU], allowedRegions: [REGIONS.NEW_SOUTH_WALES] }}'
-          }
+          accept=
+          {'{{ country: COUNTRIES.AU, region: REGIONS.NEW_SOUTH_WALES }}'}
         </Code>{' '}
         — only NSW. With a provider, location bias uses the region&apos;s
         lat/lng/radius.
@@ -70,9 +67,9 @@ export const AllowedRegionsNSW: Story = {
         {...({ provider: null } as unknown as ComponentProps<
           typeof AddressInput
         >)}
-        restrictions={{
-          allowedCountries: [COUNTRIES.AU],
-          allowedRegions: [REGIONS.NEW_SOUTH_WALES],
+        accept={{
+          country: COUNTRIES.AU,
+          region: REGIONS.NEW_SOUTH_WALES,
         }}
         defaultAddress={{ country: 'AU', state: 'NSW' }}
         label="Address (NSW only)"
@@ -83,36 +80,11 @@ export const AllowedRegionsNSW: Story = {
   ),
 };
 
-export const StateAndPostcode: Story = {
-  name: 'State + postcode (NSW, 2000, 2001)',
-  render: () => (
-    <Stack gap="xs" style={{ maxWidth: 480 }}>
-      <Text size="sm" c="dimmed">
-        Only NSW addresses with postcode 2000 or 2001 accepted.
-      </Text>
-      <AddressInput
-        {...({ provider: null } as unknown as ComponentProps<
-          typeof AddressInput
-        >)}
-        restrictions={{
-          allowedCountries: [COUNTRIES.AU],
-          allowedStates: ['NSW'],
-          allowedPostcodes: ['2000', '2001'],
-        }}
-        defaultAddress={{ country: 'AU', state: 'NSW' }}
-        label="Address (NSW 2000/2001 only)"
-        placeholder="Click to enter address…"
-        onChange={(address) => console.log('Address:', address)}
-      />
-    </Stack>
-  ),
-};
-
-export const AutocompleteWithRestrictions: Story = {
+export const AutocompleteWithAccept: Story = {
   name: 'Autocomplete (mock, Australia only)',
   args: {
     provider: mockProvider,
-    restrictions: { allowedCountries: [COUNTRIES.AU] },
+    accept: { country: COUNTRIES.AU },
     label: 'Address (Australia only)',
     placeholder: 'Type "123 Main" — selection rejected (mock returns US)',
     debounce: 300,
@@ -123,7 +95,7 @@ export const AutocompleteWithRestrictions: Story = {
     docs: {
       description: {
         story:
-          'With restrictions, selecting a suggestion validates the resolved address. Mock returns US; only AU allowed, so selection shows an error.',
+          'With accept, selecting a suggestion validates the resolved address. Mock returns US; only AU allowed, so selection shows an error.',
       },
     },
   },
