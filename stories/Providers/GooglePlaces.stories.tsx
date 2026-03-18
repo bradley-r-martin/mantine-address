@@ -1,17 +1,30 @@
 /// <reference types="vite/client" />
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { MantineProvider, Button, Text, Stack, Code } from '@mantine/core';
+import {
+  MantineProvider,
+  Button,
+  Text,
+  Stack,
+  Code,
+  Group,
+  Select,
+} from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
 import { international } from '@/formatters';
 import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
-import { COUNTRIES, REGIONS } from '@/regions';
+import { countries, COUNTRIES, getStatesForCountry } from '@/regions';
 
 const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
   | string
   | undefined;
+
+const COUNTRY_OPTIONS = [
+  { value: '', label: 'Any' },
+  ...countries.map((c) => ({ value: c.code, label: c.name })),
+];
 
 type ScriptState = 'idle' | 'loading' | 'loaded' | 'error';
 
@@ -142,6 +155,83 @@ function GooglePlacesDemo({
   return null;
 }
 
+function GooglePlacesWithRestrictionSelects({
+  apiKey,
+  debounce = 300,
+}: {
+  apiKey: string;
+  debounce?: number;
+}) {
+  const [countryCode, setCountryCode] = useState<string>('');
+  const [regionCode, setRegionCode] = useState<string>('');
+
+  const regionOptions = useMemo(() => {
+    if (!countryCode) return [];
+    const states = getStatesForCountry(countryCode);
+    if (!states) return [];
+    return [
+      { value: '', label: 'Any region' },
+      ...states.map((s) => ({ value: s.code, label: s.name })),
+    ];
+  }, [countryCode]);
+
+  const hasRegions = regionOptions.length > 0;
+
+  const accept = useMemo(() => {
+    if (!countryCode) return undefined;
+    const country = COUNTRIES[countryCode];
+    const base = { country: country ?? countryCode };
+    if (regionCode && countryCode) {
+      return { ...base, region: regionCode };
+    }
+    return base;
+  }, [countryCode, regionCode]);
+
+  return (
+    <Stack gap="md" style={{ maxWidth: 520 }}>
+      <Group wrap="nowrap" align="flex-end" gap="sm">
+        <Select
+          label="Restrict to country"
+          placeholder="Any"
+          data={COUNTRY_OPTIONS}
+          value={countryCode || null}
+          onChange={(v) => {
+            setCountryCode(v ?? '');
+            setRegionCode('');
+          }}
+          clearable
+          searchable
+          style={{ flex: 1 }}
+        />
+        <Select
+          label="Restrict to region (state)"
+          placeholder="Any region"
+          data={hasRegions ? regionOptions : [{ value: '', label: '—' }]}
+          value={hasRegions ? regionCode || null : null}
+          onChange={(v) => setRegionCode(v ?? '')}
+          clearable
+          searchable
+          disabled={!hasRegions}
+          style={{ flex: 1 }}
+        />
+      </Group>
+      {accept && (
+        <Text size="sm" c="dimmed">
+          accept={'{{'} country: {countryCode}
+          {regionCode && `, region: '${regionCode}'`} {'}}'}
+        </Text>
+      )}
+      <GooglePlacesDemo
+        apiKey={apiKey}
+        debounce={debounce}
+        label="Address"
+        placeholder="Start typing an address…"
+        accept={accept}
+      />
+    </Stack>
+  );
+}
+
 const meta: Meta<typeof GooglePlacesDemo> = {
   component: GooglePlacesDemo,
   title: 'Providers/Google Places',
@@ -193,29 +283,25 @@ export const Default: Story = {
   },
 };
 
-export const AcceptCountryAU: Story = {
-  name: 'Accept: Australia only',
+export const AcceptCountryRegionSelect: Story = {
+  name: 'Accept: country/region select',
+  render: (args) => (
+    <GooglePlacesWithRestrictionSelects
+      apiKey={args.apiKey ?? BUILD_TIME_KEY ?? ''}
+      debounce={args.debounce ?? 300}
+    />
+  ),
   args: {
     apiKey: BUILD_TIME_KEY ?? '',
     debounce: 300,
-    label: 'Address (Australia only)',
-    placeholder: 'Type an address in Australia…',
-    accept: { country: COUNTRIES.AU },
   },
-};
-
-export const AcceptRegionNSW: Story = {
-  name: 'Accept: NSW only',
-  args: {
-    apiKey: BUILD_TIME_KEY ?? '',
-    debounce: 300,
-    label: 'Address (NSW only)',
-    placeholder: 'Type an address in NSW, Australia…',
-    accept: {
-      country: COUNTRIES.AU,
-      region: REGIONS.NEW_SOUTH_WALES,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Use the country and region dropdowns to restrict which addresses are accepted (e.g. Australia only, NSW only, US + California). Google Places suggestions and selected addresses are validated against the chosen restriction.',
+      },
     },
-    defaultAddress: { country: 'AU', state: 'NSW' },
   },
 };
 

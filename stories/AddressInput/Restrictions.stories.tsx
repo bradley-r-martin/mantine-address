@@ -1,9 +1,8 @@
-import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { MantineProvider, Stack, Text, Code } from '@mantine/core';
+import { MantineProvider } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
-import { COUNTRIES, REGIONS } from '@/regions';
+import { RestrictionsDemo } from './RestrictionsDemo';
 import { mockProvider } from '../mocks/addressInputMocks';
 
 const meta: Meta<typeof AddressInput> = {
@@ -14,7 +13,7 @@ const meta: Meta<typeof AddressInput> = {
     docs: {
       description: {
         component:
-          'Examples of restricting which addresses are accepted via the `accept` prop (single country, optional single region). Provider-agnostic (manual-only or mock provider).',
+          'Restrict which addresses are accepted via the `accept` prop (single country, optional single region). Use the **country** and **region** selects above to try different combinations (e.g. "Australia only", "NSW only", "US + California") without editing code. Manual entry and autocomplete both validate against the selected restriction.',
       },
     },
   },
@@ -30,72 +29,44 @@ const meta: Meta<typeof AddressInput> = {
 export default meta;
 type Story = StoryObj<typeof AddressInput>;
 
-export const AustraliaOnly: Story = {
-  name: 'Australia only',
+export const ManualEntryWithCountryRegionSelect: Story = {
+  name: 'Manual entry with country/region select',
   render: () => (
-    <Stack gap="xs" style={{ maxWidth: 480 }}>
-      <Text size="sm" c="dimmed">
-        <Code>accept={'{{ country: COUNTRIES.AU }}'}</Code> — Country dropdown
-        shows only Australia. Manual submit validated on submit.
-      </Text>
-      <AddressInput
-        {...({ provider: null } as unknown as ComponentProps<
-          typeof AddressInput
-        >)}
-        accept={{ country: COUNTRIES.AU }}
-        label="Address (Australia only)"
-        placeholder="Click to enter address…"
-        onChange={(address) => console.log('Address:', address)}
-      />
-    </Stack>
+    <RestrictionsDemo
+      provider={null}
+      label="Address"
+      placeholder="Click to enter address…"
+      onChange={(address) => console.log('Address:', address)}
+    />
   ),
-};
-
-export const AcceptRegionNSW: Story = {
-  name: 'accept with region (NSW)',
-  render: () => (
-    <Stack gap="xs" style={{ maxWidth: 480 }}>
-      <Text size="sm" c="dimmed">
-        <Code>
-          accept=
-          {'{{ country: COUNTRIES.AU, region: REGIONS.NEW_SOUTH_WALES }}'}
-        </Code>{' '}
-        — only NSW. With a provider, location bias uses the region&apos;s
-        lat/lng/radius.
-      </Text>
-      <AddressInput
-        {...({ provider: null } as unknown as ComponentProps<
-          typeof AddressInput
-        >)}
-        accept={{
-          country: COUNTRIES.AU,
-          region: REGIONS.NEW_SOUTH_WALES,
-        }}
-        defaultAddress={{ country: 'AU', state: 'NSW' }}
-        label="Address (NSW only)"
-        placeholder="Click to enter address…"
-        onChange={(address) => console.log('Address:', address)}
-      />
-    </Stack>
-  ),
-};
-
-export const AutocompleteWithAccept: Story = {
-  name: 'Autocomplete (mock, Australia only)',
-  args: {
-    provider: mockProvider,
-    accept: { country: COUNTRIES.AU },
-    label: 'Address (Australia only)',
-    placeholder: 'Type "123 Main" — selection rejected (mock returns US)',
-    debounce: 300,
-    onChange: (address: Address | null) =>
-      address != null && console.log('Accepted:', address),
-  },
   parameters: {
     docs: {
       description: {
         story:
-          'With accept, selecting a suggestion validates the resolved address. Mock returns US; only AU allowed, so selection shows an error.',
+          'Manual entry only (no provider). Change the country and region dropdowns to restrict accepted addresses. Try "Australia only" or "NSW only" and submit an address in the manual form to see validation.',
+      },
+    },
+  },
+};
+
+export const AutocompleteWithCountryRegionSelect: Story = {
+  name: 'Autocomplete with country/region select',
+  render: () => (
+    <RestrictionsDemo
+      provider={mockProvider}
+      label="Address"
+      placeholder='Type "123 Main" — mock returns US address; set country to AU to see selection rejected'
+      debounce={300}
+      onChange={(address: Address | null) =>
+        address != null && console.log('Accepted:', address)
+      }
+    />
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'With a provider, selecting a suggestion validates the resolved address against the chosen country/region. Mock returns US; set country to Australia only to see the selection show an error.',
       },
     },
   },
