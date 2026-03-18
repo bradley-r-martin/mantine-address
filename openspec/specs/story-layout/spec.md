@@ -22,17 +22,17 @@ The project SHALL keep all Storybook story files under a single root-level direc
 
 ### Requirement: Story folder structure mirrors source
 
-The folder structure under `stories/` SHALL mirror the structure under `src/`. For each source file (or logical component) that has a corresponding story, the story file SHALL live at the same relative path under `stories/` as the source file under `src/`, with the story filename reflecting the subject (e.g. `src/AddressInput.tsx` → `stories/AddressInput.stories.tsx`; `src/formatters/formatAddress.ts` → `stories/formatters/formatAddress.stories.tsx`).
+The folder structure under `stories/` SHALL be organized for developer documentation and discoverability. Stories MAY mirror `src/` where that is the clearest mapping, but stories for a primary component MAY be grouped into documentation sections using Storybook titles (e.g. `AddressInput/Overview`, `AddressInput/Usage`) even when that does not strictly mirror the `src/` folder layout.
 
-#### Scenario: Stories for code in src subfolders
+#### Scenario: Primary component stories are grouped by intent
 
-- **WHEN** source code lives under a subfolder of `src/` (e.g. `src/formatters/`)
-- **THEN** its stories live under the same subfolder under `stories/` (e.g. `stories/formatters/`)
+- **WHEN** Storybook is run or built
+- **THEN** the primary component’s stories appear under grouped titles that match common developer intents (overview, usage patterns, manual entry, restrictions) rather than only a flat single file
 
-#### Scenario: Stories for code at src root
+#### Scenario: Non-component domains can mirror src where helpful
 
-- **WHEN** source code lives at the root of `src/` (e.g. `src/AddressInput.tsx`)
-- **THEN** its stories live at the root of `stories/` (e.g. `stories/AddressInput.stories.tsx`)
+- **WHEN** a domain maps cleanly to a source folder (e.g. `src/formatters/`)
+- **THEN** stories MAY live under the corresponding `stories/` subfolder (e.g. `stories/formatters/`) and present as `Formatting/...` in the Storybook sidebar
 
 ### Requirement: Storybook discovers and loads stories from stories/
 
@@ -61,3 +61,17 @@ Story files under `stories/` SHALL be able to import from `src/` (e.g. component
 
 - **WHEN** the project's TypeScript is run (e.g. `tsc --noEmit` or IDE type-check) with story files included
 - **THEN** imports from `src/` in story files resolve and type-check without errors
+
+### Requirement: Story titles follow a stable, predictable taxonomy
+
+Storybook story titles SHALL follow a small set of stable top-level groups that optimize discoverability for developers reading documentation.
+
+#### Scenario: AddressInput stories have consistent grouping
+
+- **WHEN** a developer browses the Storybook sidebar
+- **THEN** `AddressInput` stories are grouped under `AddressInput/Overview`, `AddressInput/Usage`, `AddressInput/Manual entry`, and `AddressInput/Restrictions`
+
+#### Scenario: Provider and formatting stories are separated
+
+- **WHEN** a developer browses the Storybook sidebar
+- **THEN** provider integration stories appear under `Providers/...` and formatting docs appear under `Formatting/...`
