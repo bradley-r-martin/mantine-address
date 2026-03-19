@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { MantineProvider } from '@mantine/core';
+import type { ComponentProps } from 'react';
 import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
 import { RestrictionsDemo } from './RestrictionsDemo';
@@ -17,13 +17,6 @@ const meta: Meta<typeof AddressInput> = {
       },
     },
   },
-  decorators: [
-    (Story) => (
-      <MantineProvider>
-        <Story />
-      </MantineProvider>
-    ),
-  ],
 };
 
 export default meta;
@@ -33,7 +26,9 @@ export const ManualEntryWithCountryRegionSelect: Story = {
   name: 'Manual entry with country/region select',
   render: () => (
     <RestrictionsDemo
-      provider={null}
+      provider={
+        null as unknown as ComponentProps<typeof AddressInput>['provider']
+      }
       label="Address"
       placeholder="Click to enter address…"
       onChange={(address) => console.log('Address:', address)}

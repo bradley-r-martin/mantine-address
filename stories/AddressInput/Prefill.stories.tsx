@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { MantineProvider, Stack, Text, Code } from '@mantine/core';
+import { Stack, Text, Code } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import { AUSTRALIA } from '@/regions';
 import { emptyProvider } from '../mocks/addressInputMocks';
@@ -17,13 +17,6 @@ const meta: Meta<typeof AddressInput> = {
       },
     },
   },
-  decorators: [
-    (Story) => (
-      <MantineProvider>
-        <Story />
-      </MantineProvider>
-    ),
-  ],
 };
 
 export default meta;
