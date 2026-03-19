@@ -1,6 +1,8 @@
 import type { Preview } from '@storybook/react';
 import { MantineProvider } from '@mantine/core';
 import { DocsContainer } from '@storybook/blocks';
+import theme from './theme';
+import '../stories/docs/tailwind.css';
 import '@mantine/core/styles.css';
 
 const preview: Preview = {
@@ -13,8 +15,9 @@ const preview: Preview = {
       },
     },
     docs: {
+      theme,
       container: ({ children, context }) => (
-        <DocsContainer context={context}>
+        <DocsContainer context={context} theme={theme}>
           <MantineProvider>
             <style>{`
               .sbdocs-wrapper { padding: 0 !important; }

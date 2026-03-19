@@ -1,0 +1,34 @@
+@import 'tailwindcss' layer(tailwind);
+
+@layer tailwind {
+  @theme {
+    --color-docs-bg: oklch(0.985 0.002 247);
+    --color-docs-surface: oklch(1 0 0);
+    --color-docs-border: oklch(0.922 0.004 247);
+    --color-docs-muted: oklch(0.556 0.014 247);
+    --color-docs-accent: oklch(0.546 0.245 262.88);
+    --color-docs-accent-light: oklch(0.932 0.032 262.88);
+    --color-docs-code-bg: oklch(0.205 0.015 247);
+    --color-docs-code-surface: oklch(0.254 0.015 247);
+    --color-docs-gradient-from: oklch(0.546 0.245 262.88);
+    --color-docs-gradient-via: oklch(0.606 0.213 292.72);
+    --color-docs-gradient-to: oklch(0.554 0.195 326.26);
+  }
+}
+
+.docs-source-override .docblock-source {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.docs-source-override .docblock-source pre {
+  margin: 0;
+  padding: 1rem;
+  background: transparent !important;
+}
+
+.docs-source-override .docblock-source button {
+  display: none;
+}

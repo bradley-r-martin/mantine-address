@@ -1,4 +1,4 @@
-import { Meta, Story, Controls } from '@storybook/blocks';
+import { Meta, Story } from '@storybook/blocks';
 import * as OverviewStories from './AddressInput/Overview.stories';
 import * as UsageStories from './AddressInput/Form.stories';
 import * as ManualEntryStories from './AddressInput/ManualEntry.stories';
@@ -7,148 +7,330 @@ import * as PrefillStories from './AddressInput/Prefill.stories';
 import * as GooglePlacesStories from './Providers/GooglePlaces.stories';
 import * as InternationalFormatterStories from './formatters/international.stories';
 import * as AustralianFormatterStories from './formatters/australian.stories';
-import { DocsPage } from './docs/DocsPage';
+import { DocsLayout } from './docs/DocsLayout';
 import { DocsSection } from './docs/DocsSection';
 import { ExampleBlock } from './docs/ExampleBlock';
+import { CodeBlock } from './docs/CodeBlock';
+import { PropsTable } from './docs/PropsTable';
+import {
+  IconRocket,
+  IconCode,
+  IconForms,
+  IconFilter,
+  IconClipboardText,
+  IconCloudCode,
+  IconTemplate,
+  IconAdjustments,
+} from '@tabler/icons-react';
 
 <Meta title="Docs" />
 
-<DocsPage
+export const sections = [
+  { label: 'Quick start', id: 'quick-start', icon: IconRocket },
+  { label: 'Core usage', id: 'core-usage', icon: IconCode },
+  { label: 'Manual entry', id: 'manual-entry', icon: IconForms },
+  { label: 'Restrictions', id: 'restrictions', icon: IconFilter },
+  { label: 'Prefill', id: 'prefill', icon: IconClipboardText },
+  { label: 'Providers', id: 'providers', icon: IconCloudCode },
+  { label: 'Formatting', id: 'formatting', icon: IconTemplate },
+  { label: 'Props API', id: 'props-api', icon: IconAdjustments },
+];
+
+<DocsLayout
   title="mantine-address"
-  description="Full documentation for AddressInput, providers, restrictions, prefill, and formatting."
+  tagline="A complete address input component for Mantine. Autocomplete-first with provider-based lookups, manual entry fallback, country/region restrictions, and address formatting utilities."
+  badges={['Mantine 7+', 'TypeScript', 'MIT']}
+  sections={sections}
 >
   <DocsSection
     title="Quick start"
-    description="AddressInput is an autocomplete-first address field. You provide a lookup provider (e.g. Google Places)."
+    description="Get up and running in under a minute. AddressInput is an autocomplete-first address field — you supply a lookup provider (like Google Places) and the component handles suggestions, selection, and structured address output."
   >
     <ExampleBlock
-      title="Minimal"
+      title="Minimal setup"
+      description="The simplest way to add an address field. Pass a provider and optional label/placeholder."
       preview={<Story of={OverviewStories.Autocomplete} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput\n  provider={provider}\n  label='Address'\n  placeholder='Start typing…'\n/>`}
+      snippet={`import { AddressInput, GooglePlacesProvider } from 'mantine-address';
+
+const provider = new GooglePlacesProvider({ apiKey: 'YOUR_API_KEY' });
+
+function MyForm() {
+return (
+
+<AddressInput
+      provider={provider}
+      label="Address"
+      placeholder="Start typing…"
     />
+);
+}`}
+/>
+
   </DocsSection>
 
-  <DocsSection title="Core usage patterns">
+  <DocsSection
+    title="Core usage"
+    description="AddressInput supports both controlled and uncontrolled patterns, just like native Mantine inputs. It also integrates with native HTML forms via hidden inputs."
+  >
     <ExampleBlock
       title="Controlled"
+      description="Manage the address value with React state. The onChange callback receives the full structured address object."
       preview={<Story of={UsageStories.Controlled} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\nconst [value, setValue] = useState(null);\n\n<AddressInput provider={provider} value={value} onChange={setValue} />`}
+      snippet={`import { useState } from 'react';
+import { AddressInput } from 'mantine-address';
+
+const [value, setValue] = useState(null);
+
+<AddressInput
+  provider={provider}
+  value={value}
+  onChange={setValue}
+/>`}
     />
 
     <ExampleBlock
       title="Uncontrolled"
+      description="Let the component manage its own state internally. Use defaultValue for an initial value."
       preview={<Story of={UsageStories.Uncontrolled} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} defaultValue={null} />`}
+      snippet={`import { AddressInput } from 'mantine-address';
+
+<AddressInput
+  provider={provider}
+  defaultValue={null}
+/>`}
     />
 
     <ExampleBlock
       title="Native form (hidden inputs)"
+      description="When you set the name prop, AddressInput renders hidden inputs for each address field — making it compatible with traditional form submissions."
       preview={<Story of={UsageStories.NativeForm} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} name='address' />`}
-    />
+      snippet={`import { AddressInput } from 'mantine-address';
 
+<form>
+  <AddressInput provider={provider} name="address" />
+  <button type="submit">Submit</button>
+</form>`}
+    />
   </DocsSection>
 
-  <DocsSection title="Manual entry">
+  <DocsSection
+    title="Manual entry"
+    description="Not every use case needs autocomplete. Set provider to null for a manual-only address form, or use preventManualEntry to lock users into autocomplete."
+  >
     <ExampleBlock
       title="Manual-only mode"
+      description="Pass provider={null} to show the full manual address form with country and state selectors — no autocomplete needed."
       preview={<Story of={ManualEntryStories.CountryStateSelect} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={null} />`}
+      snippet={`import { AddressInput } from 'mantine-address';
+
+<AddressInput provider={null} />`}
     />
 
     <ExampleBlock
       title="Prevent manual entry"
+      description="Force users to select an address from autocomplete suggestions. The 'Enter manually' fallback link is hidden."
       preview={<Story of={ManualEntryStories.PreventManualEntry} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} preventManualEntry />`}
-    />
+      snippet={`import { AddressInput } from 'mantine-address';
 
+<AddressInput
+  provider={provider}
+  preventManualEntry
+/>`}
+    />
   </DocsSection>
 
   <DocsSection
     title="Restrictions"
-    description="Use accept to restrict resolved addresses by country and optionally region/state."
+    description="Use the accept prop to restrict which addresses are valid. You can limit by country, region/state, or both — works with both autocomplete and manual entry."
   >
     <ExampleBlock
-      title="Manual entry restrictions"
+      title="Manual entry with restrictions"
+      description="Restricting to a specific country and region filters the selectors in the manual entry form."
       preview={<Story of={RestrictionStories.ManualEntryWithCountryRegionSelect} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={null} accept={{ country: 'AU', region: 'NSW' }} />`}
+      snippet={`import { AddressInput } from 'mantine-address';
+
+<AddressInput
+  provider={null}
+  accept={{ country: 'AU', region: 'NSW' }}
+/>`}
     />
 
     <ExampleBlock
-      title="Autocomplete restrictions"
+      title="Autocomplete with restrictions"
+      description="Country restrictions are forwarded to the provider, so suggestions only come from the specified country."
       preview={<Story of={RestrictionStories.AutocompleteWithCountryRegionSelect} />}
-      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} accept={{ country: 'AU' }} />`}
-    />
+      snippet={`import { AddressInput } from 'mantine-address';
 
+<AddressInput
+  provider={provider}
+  accept={{ country: 'AU' }}
+/>`}
+    />
   </DocsSection>
 
-<DocsSection title="Prefill">
-  <ExampleBlock
-    title="Prefill the manual form"
-    preview={<Story of={PrefillStories.CountryAndRegionConstants} />}
-    snippet={`import { AddressInput, AUSTRALIA } from 'mantine-address';\n\n<AddressInput\n  provider={null}\n  prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}\n/>`}
-  />
-</DocsSection>
-
-<DocsSection
-  title="Providers"
-  description="Provider integrations should keep external setup (API keys, scripts) isolated to provider-specific stories/docs."
->
-  <ExampleBlock
-    title="Google Places"
-    preview={<Story of={GooglePlacesStories.Default} />}
-    snippet={`import { AddressInput, GooglePlacesProvider } from 'mantine-address';\n\nconst provider = new GooglePlacesProvider({ apiKey: '...' });\n\n<AddressInput provider={provider} />`}
-  />
-</DocsSection>
-
-  <DocsSection title="Formatting">
+  <DocsSection
+    title="Prefill"
+    description="Pre-populate the manual entry form with known values using the prefill prop. Use exported constants for type-safe country and region references."
+  >
     <ExampleBlock
-      title="International formatter"
-      preview={<Story of={InternationalFormatterStories.FullAddress} />}
-      snippet={`import { international } from 'mantine-address';\n\ninternational.toString(address);\ninternational.toEnvelope(address);`}
+      title="Prefill with constants"
+      description="Import AUSTRALIA (or other country constants) for type-safe prefill values."
+      preview={<Story of={PrefillStories.CountryAndRegionConstants} />}
+      snippet={`import { AddressInput, AUSTRALIA } from 'mantine-address';
+
+<AddressInput
+  provider={null}
+  prefill={{
+    country: AUSTRALIA,
+    state: AUSTRALIA.NEW_SOUTH_WALES,
+  }}
+/>`}
+    />
+  </DocsSection>
+
+  <DocsSection
+    title="Providers"
+    description="Autocomplete is powered by provider adapters. Each provider encapsulates its own setup (API keys, scripts) so the component stays clean."
+  >
+    <ExampleBlock
+      title="Google Places"
+      description="The Google Places provider handles script loading, session tokens, and place detail resolution."
+      preview={<Story of={GooglePlacesStories.Default} />}
+      snippet={`import { AddressInput, GooglePlacesProvider } from 'mantine-address';
+
+const provider = new GooglePlacesProvider({
+apiKey: 'YOUR_GOOGLE_API_KEY',
+});
+
+<AddressInput provider={provider} />`}
     />
 
-    <ExampleBlock
-      title="Australian formatter"
-      preview={<Story of={AustralianFormatterStories.FullAddress} />}
-      snippet={`import { australian } from 'mantine-address';\n\naustralian.toString(address);\naustralian.toEnvelope(address);`}
-    />
+    <div className="rounded-xl border border-docs-border bg-docs-bg/50 px-5 py-4">
+      <p className="text-sm text-docs-muted leading-relaxed">
+        <strong className="text-gray-700">Building a custom provider?</strong>{' '}
+        Implement the <code className="text-xs px-1.5 py-0.5 rounded bg-docs-bg text-docs-accent font-mono">AddressLookupProvider</code> interface
+        with <code className="text-xs px-1.5 py-0.5 rounded bg-docs-bg text-docs-accent font-mono">getSuggestions()</code> and{' '}
+        <code className="text-xs px-1.5 py-0.5 rounded bg-docs-bg text-docs-accent font-mono">getDetails()</code> methods.
+        See the Google Places source for a reference implementation.
+      </p>
+    </div>
 
   </DocsSection>
 
   <DocsSection
-    title="Props"
-    description="Key props are documented below, followed by the full props table."
+    title="Formatting"
+    description="Format structured addresses into readable strings or postal envelope formats. Formatters are tree-shakeable and independent of the component."
   >
     <ExampleBlock
-      title="Key props (at a glance)"
-      preview={
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          <li>
-            <strong>provider</strong>: required for autocomplete; set{' '}
-            <code>null</code> for manual-only
-          </li>
-          <li>
-            <strong>accept</strong>: restrict resolved addresses by country /
-            region
-          </li>
-          <li>
-            <strong>prefill</strong>: prefill manual-entry modal fields (prefer
-            constants)
-          </li>
-          <li>
-            <strong>preventManualEntry</strong>: disable “Enter manually”
-            fallback
-          </li>
-          <li>
-            <strong>value</strong> / <strong>defaultValue</strong> /{' '}
-            <strong>onChange</strong>: controlled + uncontrolled patterns
-          </li>
-        </ul>
-      }
-    />
+      title="International formatter"
+      description="The international formatter handles addresses from any country with a sensible default layout."
+      preview={<Story of={InternationalFormatterStories.FullAddress} />}
+      snippet={`import { international } from 'mantine-address';
 
-    <Controls of={OverviewStories.Autocomplete} />
+// Single-line string
+international.toString(address);
+
+// Multi-line envelope format
+international.toEnvelope(address);`}
+/>
+
+    <ExampleBlock
+      title="Australian formatter"
+      description="Australia-specific formatting that follows AS/NZS 4819 conventions."
+      preview={<Story of={AustralianFormatterStories.FullAddress} />}
+      snippet={`import { australian } from 'mantine-address';
+
+// Single-line string
+australian.toString(address);
+
+// Multi-line envelope format
+australian.toEnvelope(address);`}
+/>
 
   </DocsSection>
-</DocsPage>
+
+  <DocsSection
+    title="Props API"
+    description="Complete reference for the AddressInput component props."
+  >
+    <PropsTable
+      items={[
+        {
+          name: 'provider',
+          type: 'AddressLookupProvider | null',
+          required: true,
+          description:
+            'Autocomplete provider instance (e.g. GooglePlacesProvider). Set to null for manual-only mode.',
+        },
+        {
+          name: 'value',
+          type: 'Address | null',
+          description:
+            'Controlled address value. Use with onChange for full control.',
+        },
+        {
+          name: 'defaultValue',
+          type: 'Address | null',
+          description:
+            'Initial address for uncontrolled mode.',
+        },
+        {
+          name: 'onChange',
+          type: '(value: Address | null) => void',
+          description:
+            'Callback fired when the address value changes.',
+        },
+        {
+          name: 'accept',
+          type: '{ country?: string; region?: string }',
+          description:
+            'Restrict valid addresses by country and/or region. Applied to both autocomplete and manual entry.',
+        },
+        {
+          name: 'prefill',
+          type: '{ country?: Country; state?: Region }',
+          description:
+            'Pre-populate manual entry form fields. Use exported constants (e.g. AUSTRALIA) for type safety.',
+        },
+        {
+          name: 'preventManualEntry',
+          type: 'boolean',
+          defaultValue: 'false',
+          description:
+            'Hide the "Enter manually" fallback. Users must select from autocomplete suggestions.',
+        },
+        {
+          name: 'name',
+          type: 'string',
+          description:
+            'Renders hidden inputs for native form submission. Each address field gets a hidden input with name prefix.',
+        },
+        {
+          name: 'label',
+          type: 'ReactNode',
+          description:
+            'Label displayed above the input. Passed through to the underlying Mantine TextInput.',
+        },
+        {
+          name: 'placeholder',
+          type: 'string',
+          description:
+            'Placeholder text for the autocomplete input.',
+        },
+        {
+          name: 'disabled',
+          type: 'boolean',
+          defaultValue: 'false',
+          description:
+            'Disable the entire address input.',
+        },
+        {
+          name: 'error',
+          type: 'ReactNode',
+          description:
+            'Error message displayed below the input. Passed through to the underlying Mantine TextInput.',
+        },
+      ]}
+    />
+  </DocsSection>
+</DocsLayout>
