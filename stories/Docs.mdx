@@ -5,6 +5,7 @@ import * as ManualEntryStories from './AddressInput/ManualEntry.stories';
 import * as RestrictionStories from './AddressInput/Restrictions.stories';
 import * as PrefillStories from './AddressInput/Prefill.stories';
 import * as GooglePlacesStories from './Providers/GooglePlaces.stories';
+import * as GlobalDefaultsStories from './AddressInput/GlobalDefaults.stories';
 import * as InternationalFormatterStories from './formatters/international.stories';
 import * as AustralianFormatterStories from './formatters/australian.stories';
 import { DocsLayout } from './docs/DocsLayout';
@@ -21,6 +22,7 @@ import {
   IconCloudCode,
   IconTemplate,
   IconAdjustments,
+  IconSettings,
 } from '@tabler/icons-react';
 
 <Meta title="Docs" />
@@ -32,6 +34,7 @@ export const sections = [
   { label: 'Restrictions', id: 'restrictions', icon: IconFilter },
   { label: 'Prefill', id: 'prefill', icon: IconClipboardText },
   { label: 'Providers', id: 'providers', icon: IconCloudCode },
+  { label: 'Global defaults', id: 'global-defaults', icon: IconSettings },
   { label: 'Formatting', id: 'formatting', icon: IconTemplate },
   { label: 'Props API', id: 'props-api', icon: IconAdjustments },
 ];
@@ -214,6 +217,45 @@ apiKey: 'YOUR_GOOGLE_API_KEY',
         See the Google Places source for a reference implementation.
       </p>
     </div>
+
+  </DocsSection>
+
+  <DocsSection
+    title="Global defaults"
+    description="AddressInput uses Mantine’s factory + useProps, so you can set a shared provider and other defaults once on MantineProvider. Props you pass on each AddressInput still override theme defaultProps."
+  >
+    <ExampleBlock
+      title="Provider and props via theme"
+      description="Create a theme with components.AddressInput.defaultProps (e.g. provider, debounce, label, placeholder, format, nothingFoundMessage). Wrap your app in MantineProvider — individual fields only need props when they differ from the defaults."
+      preview={<Story of={GlobalDefaultsStories.ViaMantineTheme} />}
+      snippet={`import { MantineProvider, createTheme } from '@mantine/core';
+import { AddressInput, GooglePlacesProvider } from 'mantine-address';
+
+const provider = new GooglePlacesProvider({ apiKey: 'YOUR_API_KEY' });
+
+const theme = createTheme({
+components: {
+AddressInput: {
+defaultProps: {
+provider,
+debounce: 400,
+label: 'Address',
+placeholder: 'Start typing…',
+},
+},
+},
+});
+
+function App() {
+return (
+
+<MantineProvider theme={theme}>
+<AddressInput />
+<AddressInput label="Billing address" />
+</MantineProvider>
+);
+}`}
+/>
 
   </DocsSection>
 
