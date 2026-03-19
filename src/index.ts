@@ -16,6 +16,7 @@ export type {
   AddressDetails,
   GetSuggestionsOptions,
   AddressLookupProvider,
+  PrefillAddress,
 } from './types';
 
 export {
