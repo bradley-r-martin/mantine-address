@@ -102,3 +102,13 @@ Storybook stories SHALL prioritize clarity, simplicity, and structure so that th
 
 - **WHEN** a story requires external setup (e.g. loading Google Maps script)
 - **THEN** that setup appears only in provider-specific story groups (e.g. `Providers/Google Places`) and is not duplicated across unrelated story files
+
+#### Scenario: Documentation pages provide a consistent structure
+
+- **WHEN** a developer opens a canonical Storybook documentation entry for the library component (e.g. `AddressInput/…`)
+- **THEN** the entry is presented as a documentation-style page with clearly labeled sections (e.g. Overview, Usage, Props, Examples)
+
+#### Scenario: Examples include curated code snippets
+
+- **WHEN** a developer views an example within a documentation-style page
+- **THEN** a copy/paste-ready code snippet is provided adjacent to the live example and focuses on the recommended pattern for the prop(s) or integration being documented
