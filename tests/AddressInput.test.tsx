@@ -6,6 +6,8 @@ import type {
   Address,
   AddressLookupProvider,
   AddressSuggestion,
+  Country,
+  Region,
 } from '@/types';
 import { australian, type AddressFormatProvider } from '@/formatters';
 import { COUNTRIES, AUSTRALIA } from '@/regions';
@@ -432,6 +434,79 @@ describe('AddressInput', () => {
         })
       );
       expect(screen.queryByText('Enter address')).not.toBeInTheDocument();
+    });
+
+    it('no provider: respects data prop (custom countries + async regions)', async () => {
+      const regions: Record<string, Region> = {
+        NEW_SOUTH_WALES: {
+          name: 'New South Wales',
+          abbreviation: 'NSW',
+          location: { latitude: -33.8688, longitude: 151.2093, radius: 1000 },
+        },
+      };
+      const countries: readonly Country[] = [{ code: 'AU', name: 'Australia' }];
+
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            data={{
+              countries,
+              regions: async (code) =>
+                code.trim().toUpperCase() === 'AU' ? regions : undefined,
+            }}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog', { name: 'Enter address' });
+
+      await act(async () => {
+        fireEvent.click(within(modal).getByLabelText('Country'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(
+        screen.getByRole('option', { name: 'Australia' })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('option', { name: 'United Kingdom' })
+      ).not.toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('option', { name: 'Australia' }));
+      });
+
+      // State select should appear (may be temporarily disabled while loading).
+      const stateControl = within(modal).getByLabelText('State / Province');
+      expect(stateControl).toBeInTheDocument();
+
+      await act(async () => {
+        // allow regions promise to resolve
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        fireEvent.click(stateControl);
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(
+        screen.getByRole('option', { name: 'New South Wales' })
+      ).toBeInTheDocument();
     });
 
     it('provider returns no results and preventManualEntry false (default): Enter manually option appears and opens modal', async () => {

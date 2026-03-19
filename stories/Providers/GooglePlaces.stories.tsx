@@ -16,7 +16,8 @@ import type { Address } from '@/types';
 import { international } from '@/formatters';
 import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
 import { COUNTRIES } from '@/regions';
-import { getCountriesSorted, getStatesForCountry } from '@/utilities';
+import { defaultAddressData } from '@/data';
+import { getCountriesSorted, getStateOptionsFromRegions } from '@/utilities';
 
 const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
   | string
@@ -166,14 +167,45 @@ function GooglePlacesWithRestrictionSelects({
   const [countryCode, setCountryCode] = useState<string>('');
   const [regionCode, setRegionCode] = useState<string>('');
 
-  const regionOptions = useMemo(() => {
-    if (!countryCode) return [];
-    const states = getStatesForCountry(countryCode);
-    if (!states) return [];
-    return [
-      { value: '', label: 'Any region' },
-      ...states.map((s) => ({ value: s.code, label: s.name })),
-    ];
+  const [regionOptions, setRegionOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!countryCode || !defaultAddressData.regions) {
+      setRegionOptions([]);
+      setRegionsLoading(false);
+      return;
+    }
+
+    setRegionsLoading(true);
+    void defaultAddressData
+      .regions(countryCode)
+      .then((regions) => {
+        if (cancelled) return;
+        if (!regions) {
+          setRegionOptions([]);
+          setRegionsLoading(false);
+          return;
+        }
+        const states = getStateOptionsFromRegions(regions);
+        setRegionOptions([
+          { value: '', label: 'Any region' },
+          ...states.map((s) => ({ value: s.code, label: s.name })),
+        ]);
+        setRegionsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRegionOptions([]);
+        setRegionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [countryCode]);
 
   const hasRegions = regionOptions.length > 0;
@@ -207,19 +239,25 @@ function GooglePlacesWithRestrictionSelects({
         <Select
           label="Restrict to region (state)"
           placeholder="Any region"
-          data={hasRegions ? regionOptions : [{ value: '', label: '—' }]}
+          data={
+            hasRegions
+              ? regionOptions
+              : regionsLoading
+                ? [{ value: '', label: 'Loading…' }]
+                : [{ value: '', label: '—' }]
+          }
           value={hasRegions ? regionCode || null : null}
           onChange={(v) => setRegionCode(v ?? '')}
           clearable
           searchable
-          disabled={!hasRegions}
+          disabled={!hasRegions && !regionsLoading}
           style={{ flex: 1 }}
         />
       </Group>
       {accept && (
         <Text size="sm" c="dimmed">
           accept={'{{'} country: {countryCode}
-          {regionCode && `, region: '${regionCode}'`} {'}}'}
+          {regionCode && `, region: ${regionCode}`} {'}}'}
         </Text>
       )}
       <GooglePlacesDemo
@@ -282,6 +320,14 @@ export const Default: Story = {
     label: 'Address',
     placeholder: 'Start typing a real address…',
   },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Usage:\n\n```tsx\nimport { AddressInput, GooglePlacesProvider } from 'mantine-address';\n\nconst provider = new GooglePlacesProvider({ apiKey: '...' });\n\n<AddressInput provider={provider} />\n```\n",
+      },
+    },
+  },
 };
 
 export const AcceptCountryRegionSelect: Story = {
@@ -300,7 +346,7 @@ export const AcceptCountryRegionSelect: Story = {
     docs: {
       description: {
         story:
-          'Use the country and region dropdowns to restrict which addresses are accepted (e.g. Australia only, NSW only, US + California). Google Places suggestions and selected addresses are validated against the chosen restriction.',
+          "Use the country and region dropdowns to restrict which addresses are accepted.\n\nUsage:\n\n```tsx\nimport { AddressInput, GooglePlacesProvider } from 'mantine-address';\n\nconst provider = new GooglePlacesProvider({ apiKey: '...' });\n\n<AddressInput\n  provider={provider}\n  accept={{ country: 'AU', region: 'NSW' }}\n/>\n```\n",
       },
     },
   },
@@ -336,4 +382,12 @@ function ControlledStory() {
 export const Controlled: Story = {
   name: 'Controlled',
   render: () => <ControlledStory />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Usage:\n\n```tsx\nimport { AddressInput, GooglePlacesProvider } from 'mantine-address';\n\nconst provider = new GooglePlacesProvider({ apiKey: '...' });\n\nfunction Example() {\n  const [value, setValue] = useState(null);\n  return <AddressInput provider={provider} value={value} onChange={setValue} />;\n}\n```\n",
+      },
+    },
+  },
 };

@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ComponentProps } from 'react';
 import { Stack, Group, Select, Text } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import { COUNTRIES } from '@/regions';
-import { getCountriesSorted, getStatesForCountry } from '@/utilities';
+import { defaultAddressData } from '@/data';
+import { getCountriesSorted, getStateOptionsFromRegions } from '@/utilities';
 import type { AddressLookupProvider } from '@/types';
 
 const COUNTRY_OPTIONS = [
@@ -28,15 +29,45 @@ export function RestrictionsDemo({
 }: RestrictionsDemoProps) {
   const [countryCode, setCountryCode] = useState<string>('');
   const [regionCode, setRegionCode] = useState<string>('');
+  const [regionOptions, setRegionOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
 
-  const regionOptions = useMemo(() => {
-    if (!countryCode) return [];
-    const states = getStatesForCountry(countryCode);
-    if (!states) return [];
-    return [
-      { value: '', label: 'Any region' },
-      ...states.map((s) => ({ value: s.code, label: s.name })),
-    ];
+  useEffect(() => {
+    let cancelled = false;
+    if (!countryCode || !defaultAddressData.regions) {
+      setRegionOptions([]);
+      setRegionsLoading(false);
+      return;
+    }
+
+    setRegionsLoading(true);
+    void defaultAddressData
+      .regions(countryCode)
+      .then((regions) => {
+        if (cancelled) return;
+        if (!regions) {
+          setRegionOptions([]);
+          setRegionsLoading(false);
+          return;
+        }
+        const states = getStateOptionsFromRegions(regions);
+        setRegionOptions([
+          { value: '', label: 'Any region' },
+          ...states.map((s) => ({ value: s.code, label: s.name })),
+        ]);
+        setRegionsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRegionOptions([]);
+        setRegionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [countryCode]);
 
   const hasRegions = regionOptions.length > 0;
@@ -79,19 +110,25 @@ export function RestrictionsDemo({
         <Select
           label="Restrict to region (state)"
           placeholder="Any region"
-          data={hasRegions ? regionOptions : [{ value: '', label: '—' }]}
+          data={
+            hasRegions
+              ? regionOptions
+              : regionsLoading
+                ? [{ value: '', label: 'Loading…' }]
+                : [{ value: '', label: '—' }]
+          }
           value={hasRegions ? regionCode || null : null}
           onChange={(v) => setRegionCode(v ?? '')}
           clearable
           searchable
-          disabled={!hasRegions}
+          disabled={!hasRegions && !regionsLoading}
           style={{ flex: 1 }}
         />
       </Group>
       {accept && (
         <Text size="sm" c="dimmed">
           accept={'{{'} country: {countryCode}
-          {regionCode && `, region: '${regionCode}'`} {'}}'}
+          {regionCode && `, region: ${regionCode}`} {'}}'}
         </Text>
       )}
       <AddressInput {...addressInputProps} />

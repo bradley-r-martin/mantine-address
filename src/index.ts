@@ -21,9 +21,17 @@ export type {
   Region,
 } from './types';
 
+export type {
+  AddressData,
+  RegionsResolver,
+  PostcodesResolver,
+  SuburbsResolver,
+} from './data';
+export { defaultAddressData } from './data';
+
 export { COUNTRIES, AUSTRALIA, UNITED_STATES } from './regions';
 export {
   getCountriesSorted,
-  getStatesForCountry,
   getRegionsFromCountry,
+  getStateOptionsFromRegions,
 } from './utilities';

@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { COUNTRIES, AUSTRALIA, UNITED_STATES, type Country } from '@/regions';
-import {
-  getCountriesSorted,
-  getStatesForCountry,
-  getRegionsFromCountry,
-} from '@/utilities';
+import { defaultAddressData } from '@/data';
+import { getCountriesSorted, getRegionsFromCountry } from '@/utilities';
+import { getStateOptionsFromRegions } from '@/utilities';
 
 describe('regions API', () => {
   describe('countries (sorted)', () => {
@@ -37,9 +35,11 @@ describe('regions API', () => {
     });
   });
 
-  describe('getStatesForCountry', () => {
-    it('returns non-empty list for AU', () => {
-      const list = getStatesForCountry('AU');
+  describe('defaultAddressData.regions', () => {
+    it('resolves non-empty list for AU', async () => {
+      const regions = await defaultAddressData.regions?.('AU');
+      expect(regions).toBeDefined();
+      const list = regions ? getStateOptionsFromRegions(regions) : undefined;
       expect(list).toBeDefined();
       expect(Array.isArray(list)).toBe(true);
       expect(list!.length).toBeGreaterThan(0);
@@ -47,8 +47,10 @@ describe('regions API', () => {
       expect(list!.some((s) => s.code === 'VIC')).toBe(true);
     });
 
-    it('returns non-empty list for US', () => {
-      const list = getStatesForCountry('US');
+    it('resolves non-empty list for US', async () => {
+      const regions = await defaultAddressData.regions?.('US');
+      expect(regions).toBeDefined();
+      const list = regions ? getStateOptionsFromRegions(regions) : undefined;
       expect(list).toBeDefined();
       expect(Array.isArray(list)).toBe(true);
       expect(list!.length).toBeGreaterThan(0);
@@ -56,17 +58,17 @@ describe('regions API', () => {
       expect(list!.some((s) => s.code === 'NY')).toBe(true);
     });
 
-    it('returns undefined for unconfigured country code', () => {
-      expect(getStatesForCountry('XX')).toBeUndefined();
-      expect(getStatesForCountry('GB')).toBeUndefined();
-      expect(getStatesForCountry('')).toBeUndefined();
+    it('resolves undefined for unconfigured country code', async () => {
+      await expect(defaultAddressData.regions?.('XX')).resolves.toBeUndefined();
+      await expect(defaultAddressData.regions?.('GB')).resolves.toBeUndefined();
+      await expect(defaultAddressData.regions?.('')).resolves.toBeUndefined();
     });
 
-    it('is case-insensitive for AU and US', () => {
-      expect(getStatesForCountry('au')).toBeDefined();
-      expect(getStatesForCountry('Au')).toBeDefined();
-      expect(getStatesForCountry('us')).toBeDefined();
-      expect(getStatesForCountry('US')).toBeDefined();
+    it('is case-insensitive for AU and US', async () => {
+      await expect(defaultAddressData.regions?.('au')).resolves.toBeDefined();
+      await expect(defaultAddressData.regions?.('Au')).resolves.toBeDefined();
+      await expect(defaultAddressData.regions?.('us')).resolves.toBeDefined();
+      await expect(defaultAddressData.regions?.('US')).resolves.toBeDefined();
     });
   });
 
@@ -100,12 +102,11 @@ describe('regions API', () => {
       expect(AUSTRALIA.NEW_SOUTH_WALES.abbreviation).toBe('NSW');
     });
 
-    it('COUNTRIES.AU is same reference as AUSTRALIA', () => {
-      expect(COUNTRIES.AU).toBe(AUSTRALIA);
-    });
-
-    it('COUNTRIES.US is same reference as UNITED_STATES', () => {
-      expect(COUNTRIES.US).toBe(UNITED_STATES);
+    it('COUNTRIES entries do not embed region datasets', () => {
+      expect(COUNTRIES.AU).not.toBe(AUSTRALIA);
+      expect(getRegionsFromCountry(COUNTRIES.AU)).toBeUndefined();
+      expect(COUNTRIES.US).not.toBe(UNITED_STATES);
+      expect(getRegionsFromCountry(COUNTRIES.US)).toBeUndefined();
     });
   });
 });

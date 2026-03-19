@@ -2,8 +2,6 @@ export type { Country, Region } from '../types';
 export { AUSTRALIA } from './au';
 export { UNITED_STATES } from './us';
 
-import { AUSTRALIA } from './au';
-import { UNITED_STATES } from './us';
 import type { Country } from '../types';
 
 /** ISO 3166-1 alpha-2 code to Country (source: country-list). */
@@ -21,7 +19,7 @@ export const COUNTRIES: Record<string, Country> = {
   AR: { code: 'AR', name: 'Argentina' },
   AM: { code: 'AM', name: 'Armenia' },
   AW: { code: 'AW', name: 'Aruba' },
-  AU: AUSTRALIA,
+  AU: { code: 'AU', name: 'Australia' },
   AT: { code: 'AT', name: 'Austria' },
   AZ: { code: 'AZ', name: 'Azerbaijan' },
   BS: { code: 'BS', name: 'Bahamas' },
@@ -245,7 +243,7 @@ export const COUNTRIES: Record<string, Country> = {
   UA: { code: 'UA', name: 'Ukraine' },
   AE: { code: 'AE', name: 'United Arab Emirates' },
   GB: { code: 'GB', name: 'United Kingdom' },
-  US: UNITED_STATES,
+  US: { code: 'US', name: 'United States' },
   UY: { code: 'UY', name: 'Uruguay' },
   UZ: { code: 'UZ', name: 'Uzbekistan' },
   VU: { code: 'VU', name: 'Vanuatu' },

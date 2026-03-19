@@ -43,7 +43,7 @@ export const ManualEntryWithCountryRegionSelect: Story = {
     docs: {
       description: {
         story:
-          'Manual entry only (no provider). Change the country and region dropdowns to restrict accepted addresses. Try "Australia only" or "NSW only" and submit an address in the manual form to see validation.',
+          "Manual entry only (no provider). Change the country and region dropdowns to restrict accepted addresses.\n\nUsage:\n\n```tsx\nimport { AddressInput } from 'mantine-address';\n\n<AddressInput provider={null} accept={{ country: 'AU', region: 'NSW' }} />\n```\n",
       },
     },
   },
@@ -66,7 +66,7 @@ export const AutocompleteWithCountryRegionSelect: Story = {
     docs: {
       description: {
         story:
-          'With a provider, selecting a suggestion validates the resolved address against the chosen country/region. Mock returns US; set country to Australia only to see the selection show an error.',
+          "With a provider, selecting a suggestion validates the resolved address against the chosen country/region.\n\nUsage:\n\n```tsx\nimport { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} accept={{ country: 'AU' }} />\n```\n",
       },
     },
   },
