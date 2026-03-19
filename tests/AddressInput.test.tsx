@@ -8,7 +8,7 @@ import type {
   AddressSuggestion,
 } from '@/types';
 import { australian, type AddressFormatProvider } from '@/formatters';
-import { COUNTRIES } from '@/regions';
+import { COUNTRIES, REGIONS } from '@/regions';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },
@@ -206,6 +206,83 @@ describe('AddressInput', () => {
       expect(
         within(modal).getByLabelText('State / Province')
       ).toBeInTheDocument();
+    });
+
+    it('no provider: open modal with prefill (Country/Region constants) pre-fills form', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            prefill={{
+              country: COUNTRIES.AU,
+              state: REGIONS.NEW_SOUTH_WALES,
+              suburb: 'Sydney',
+              postcode: '2000',
+            }}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      expect(screen.getByText('Enter address')).toBeInTheDocument();
+      const modal = screen.getByRole('dialog');
+      expect(within(modal).getByLabelText('Suburb')).toHaveValue('Sydney');
+      expect(within(modal).getByLabelText('Postcode')).toHaveValue('2000');
+      expect(within(modal).getByLabelText('Country')).toHaveValue('Australia');
+      expect(within(modal).getByLabelText('State / Province')).toHaveValue(
+        'New South Wales'
+      );
+    });
+
+    it('no provider: prefill overrides defaultAddress for same field', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            defaultAddress={{ country: 'US', street_name: 'Main St' }}
+            prefill={{ country: COUNTRIES.AU }}
+          />
+        </MantineProvider>
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('textbox'));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+      });
+
+      const modal = screen.getByRole('dialog');
+      expect(within(modal).getByLabelText('Country')).toHaveValue('Australia');
+      expect(within(modal).getByLabelText('Street name')).toHaveValue(
+        'Main St'
+      );
+    });
+
+    it('no provider: prefill does not set component value before modal or submit', async () => {
+      render(
+        <MantineProvider>
+          <AddressInput
+            {...({ provider: null } as unknown as React.ComponentProps<
+              typeof AddressInput
+            >)}
+            prefill={{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}
+          />
+        </MantineProvider>
+      );
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveValue('');
     });
 
     it('no provider: cancel closes modal without calling onChange', async () => {

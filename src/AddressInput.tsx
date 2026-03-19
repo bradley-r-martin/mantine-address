@@ -22,6 +22,7 @@ import type {
   Address,
   AddressLookupProvider,
   AddressSuggestion,
+  PrefillAddress,
 } from './types';
 import { international, type AddressFormatProvider } from './formatters';
 import { addressSatisfiesRestrictions } from './restrictions';
@@ -97,6 +98,12 @@ export interface AddressInputProps extends Omit<
    * only fields present in this object are pre-filled; others stay empty. Does not change value/defaultValue.
    */
   defaultAddress?: Partial<Address>;
+  /**
+   * Optional prefill for the manual-entry form. Prefer this over defaultAddress when using
+   * constants (e.g. prefill={{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}).
+   * When both prefill and defaultAddress are set, prefill wins for overlapping fields.
+   */
+  prefill?: PrefillAddress;
   /**
    * Optional accept filter (single country, optional single region). When set, only addresses
    * matching the given country and optionally region are accepted (autocomplete selection and manual submit).
@@ -177,6 +184,16 @@ function renderHiddenInputs(
   );
 }
 
+/** Resolve prefill/default value to string for the manual form. */
+function resolvePrefillCountry(v: PrefillAddress['country']): string {
+  if (v == null) return '';
+  return typeof v === 'string' ? v.trim() : v.code;
+}
+function resolvePrefillState(v: PrefillAddress['state']): string {
+  if (v == null) return '';
+  return typeof v === 'string' ? v.trim() : v.abbreviation;
+}
+
 export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const props = useProps('AddressInput', defaultProps, _props);
   const {
@@ -191,6 +208,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     rightSection,
     nothingFoundMessage,
     defaultAddress,
+    prefill,
     accept,
     error: errorProp,
     ...rest
@@ -227,19 +245,21 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const openManualModal = (initialStreet?: string) => {
     setManualFormError(null);
     const d = defaultAddress ?? {};
+    const p = prefill ?? {};
+    const merged = { ...d, ...p };
     const str = (v: string | undefined) => (v != null ? String(v).trim() : '');
-    setManualFormBuildingName(str(d.building_name));
-    setManualFormLevel(str(d.level));
-    setManualFormUnit(str(d.unit));
-    setManualFormLotNo(str(d.lot_no));
-    setManualFormStreetNumber(str(d.street_number));
-    setManualFormStreetName(initialStreet ?? str(d.street_name));
-    setManualFormStreetType(str(d.street_type));
-    setManualFormStreetSuffix(str(d.street_suffix));
-    setManualFormSuburb(str(d.suburb));
-    setManualFormState(str(d.state));
-    setManualFormPostcode(str(d.postcode));
-    setManualFormCountry(str(d.country));
+    setManualFormBuildingName(str(merged.building_name));
+    setManualFormLevel(str(merged.level));
+    setManualFormUnit(str(merged.unit));
+    setManualFormLotNo(str(merged.lot_no));
+    setManualFormStreetNumber(str(merged.street_number));
+    setManualFormStreetName(initialStreet ?? str(merged.street_name));
+    setManualFormStreetType(str(merged.street_type));
+    setManualFormStreetSuffix(str(merged.street_suffix));
+    setManualFormSuburb(str(merged.suburb));
+    setManualFormState(resolvePrefillState(merged.state));
+    setManualFormPostcode(str(merged.postcode));
+    setManualFormCountry(resolvePrefillCountry(merged.country));
     setManualModalOpen(true);
   };
 

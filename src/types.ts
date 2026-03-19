@@ -47,6 +47,26 @@ export interface AcceptAddress {
   region?: string | Region;
 }
 
+/**
+ * Optional prefill for the manual-entry form. Same shape as partial Address except
+ * country and state accept Country/Region objects so consumers can use constants
+ * (e.g. prefill={{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}).
+ */
+export interface PrefillAddress {
+  building_name?: string;
+  level?: string;
+  unit?: string;
+  lot_no?: string;
+  street_number?: string;
+  street_name?: string;
+  street_type?: string;
+  street_suffix?: string;
+  suburb?: string;
+  state?: string | Region;
+  postcode?: string;
+  country?: string | Country;
+}
+
 /** Options passed to getSuggestions so providers can filter server-side (e.g. by country). */
 export interface GetSuggestionsOptions {
   accept?: AcceptAddress;
