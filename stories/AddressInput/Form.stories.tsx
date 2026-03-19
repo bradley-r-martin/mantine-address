@@ -1,12 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import {
-  MantineProvider,
-  Button,
-  Stack,
-  Text,
-  TextInput,
-  Code,
-} from '@mantine/core';
+import { Button, Stack, Text, TextInput, Code } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
 import { international } from '@/formatters';
@@ -25,13 +18,6 @@ const meta: Meta<typeof AddressInput> = {
       },
     },
   },
-  decorators: [
-    (Story) => (
-      <MantineProvider>
-        <Story />
-      </MantineProvider>
-    ),
-  ],
 };
 
 export default meta;

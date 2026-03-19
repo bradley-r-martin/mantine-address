@@ -1,12 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import {
-  MantineProvider,
-  Stack,
-  Text,
-  Code,
-  Title,
-  Divider,
-} from '@mantine/core';
+import { Stack, Text, Code, Title, Divider } from '@mantine/core';
 import { australian } from '@/formatters';
 import type { Address } from '@/types';
 import {
@@ -27,13 +20,6 @@ const meta: Meta = {
       },
     },
   },
-  decorators: [
-    (Story) => (
-      <MantineProvider>
-        <Story />
-      </MantineProvider>
-    ),
-  ],
 };
 
 export default meta;

@@ -1,0 +1,154 @@
+import { Meta, Story, Controls } from '@storybook/blocks';
+import * as OverviewStories from './AddressInput/Overview.stories';
+import * as UsageStories from './AddressInput/Form.stories';
+import * as ManualEntryStories from './AddressInput/ManualEntry.stories';
+import * as RestrictionStories from './AddressInput/Restrictions.stories';
+import * as PrefillStories from './AddressInput/Prefill.stories';
+import * as GooglePlacesStories from './Providers/GooglePlaces.stories';
+import * as InternationalFormatterStories from './formatters/international.stories';
+import * as AustralianFormatterStories from './formatters/australian.stories';
+import { DocsPage } from './docs/DocsPage';
+import { DocsSection } from './docs/DocsSection';
+import { ExampleBlock } from './docs/ExampleBlock';
+
+<Meta title="Docs" />
+
+<DocsPage
+  title="mantine-address"
+  description="Full documentation for AddressInput, providers, restrictions, prefill, and formatting."
+>
+  <DocsSection
+    title="Quick start"
+    description="AddressInput is an autocomplete-first address field. You provide a lookup provider (e.g. Google Places)."
+  >
+    <ExampleBlock
+      title="Minimal"
+      preview={<Story of={OverviewStories.Autocomplete} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput\n  provider={provider}\n  label='Address'\n  placeholder='Start typing…'\n/>`}
+    />
+  </DocsSection>
+
+  <DocsSection title="Core usage patterns">
+    <ExampleBlock
+      title="Controlled"
+      preview={<Story of={UsageStories.Controlled} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\nconst [value, setValue] = useState(null);\n\n<AddressInput provider={provider} value={value} onChange={setValue} />`}
+    />
+
+    <ExampleBlock
+      title="Uncontrolled"
+      preview={<Story of={UsageStories.Uncontrolled} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} defaultValue={null} />`}
+    />
+
+    <ExampleBlock
+      title="Native form (hidden inputs)"
+      preview={<Story of={UsageStories.NativeForm} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} name='address' />`}
+    />
+
+  </DocsSection>
+
+  <DocsSection title="Manual entry">
+    <ExampleBlock
+      title="Manual-only mode"
+      preview={<Story of={ManualEntryStories.CountryStateSelect} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={null} />`}
+    />
+
+    <ExampleBlock
+      title="Prevent manual entry"
+      preview={<Story of={ManualEntryStories.PreventManualEntry} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} preventManualEntry />`}
+    />
+
+  </DocsSection>
+
+  <DocsSection
+    title="Restrictions"
+    description="Use accept to restrict resolved addresses by country and optionally region/state."
+  >
+    <ExampleBlock
+      title="Manual entry restrictions"
+      preview={<Story of={RestrictionStories.ManualEntryWithCountryRegionSelect} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={null} accept={{ country: 'AU', region: 'NSW' }} />`}
+    />
+
+    <ExampleBlock
+      title="Autocomplete restrictions"
+      preview={<Story of={RestrictionStories.AutocompleteWithCountryRegionSelect} />}
+      snippet={`import { AddressInput } from 'mantine-address';\n\n<AddressInput provider={provider} accept={{ country: 'AU' }} />`}
+    />
+
+  </DocsSection>
+
+<DocsSection title="Prefill">
+  <ExampleBlock
+    title="Prefill the manual form"
+    preview={<Story of={PrefillStories.CountryAndRegionConstants} />}
+    snippet={`import { AddressInput, AUSTRALIA } from 'mantine-address';\n\n<AddressInput\n  provider={null}\n  prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}\n/>`}
+  />
+</DocsSection>
+
+<DocsSection
+  title="Providers"
+  description="Provider integrations should keep external setup (API keys, scripts) isolated to provider-specific stories/docs."
+>
+  <ExampleBlock
+    title="Google Places"
+    preview={<Story of={GooglePlacesStories.Default} />}
+    snippet={`import { AddressInput, GooglePlacesProvider } from 'mantine-address';\n\nconst provider = new GooglePlacesProvider({ apiKey: '...' });\n\n<AddressInput provider={provider} />`}
+  />
+</DocsSection>
+
+  <DocsSection title="Formatting">
+    <ExampleBlock
+      title="International formatter"
+      preview={<Story of={InternationalFormatterStories.FullAddress} />}
+      snippet={`import { international } from 'mantine-address';\n\ninternational.toString(address);\ninternational.toEnvelope(address);`}
+    />
+
+    <ExampleBlock
+      title="Australian formatter"
+      preview={<Story of={AustralianFormatterStories.FullAddress} />}
+      snippet={`import { australian } from 'mantine-address';\n\naustralian.toString(address);\naustralian.toEnvelope(address);`}
+    />
+
+  </DocsSection>
+
+  <DocsSection
+    title="Props"
+    description="Key props are documented below, followed by the full props table."
+  >
+    <ExampleBlock
+      title="Key props (at a glance)"
+      preview={
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <li>
+            <strong>provider</strong>: required for autocomplete; set{' '}
+            <code>null</code> for manual-only
+          </li>
+          <li>
+            <strong>accept</strong>: restrict resolved addresses by country /
+            region
+          </li>
+          <li>
+            <strong>prefill</strong>: prefill manual-entry modal fields (prefer
+            constants)
+          </li>
+          <li>
+            <strong>preventManualEntry</strong>: disable “Enter manually”
+            fallback
+          </li>
+          <li>
+            <strong>value</strong> / <strong>defaultValue</strong> /{' '}
+            <strong>onChange</strong>: controlled + uncontrolled patterns
+          </li>
+        </ul>
+      }
+    />
+
+    <Controls of={OverviewStories.Autocomplete} />
+
+  </DocsSection>
+</DocsPage>

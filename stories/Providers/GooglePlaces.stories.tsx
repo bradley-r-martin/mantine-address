@@ -2,15 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import {
-  MantineProvider,
-  Button,
-  Text,
-  Stack,
-  Code,
-  Group,
-  Select,
-} from '@mantine/core';
+import { Button, Text, Stack, Code, Group, Select } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
 import { international } from '@/formatters';
@@ -283,13 +275,6 @@ const meta: Meta<typeof GooglePlacesDemo> = {
       },
     },
   },
-  decorators: [
-    (Story) => (
-      <MantineProvider>
-        <Story />
-      </MantineProvider>
-    ),
-  ],
   argTypes: {
     apiKey: {
       name: 'Google Maps API Key',
