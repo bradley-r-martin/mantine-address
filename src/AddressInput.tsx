@@ -25,8 +25,12 @@ import type {
   PrefillAddress,
 } from './types';
 import { international, type AddressFormatProvider } from './formatters';
-import { addressSatisfiesRestrictions } from './utilities';
-import { getCountriesSorted, getStatesForCountry } from './utilities';
+import { defaultAddressData, type AddressData } from './data';
+import {
+  addressSatisfiesRestrictions,
+  getCountriesSorted,
+  getStateOptionsFromRegions,
+} from './utilities';
 
 /** Default validation message when an address does not satisfy restrictions. */
 const RESTRICTION_ERROR_MESSAGE = 'Address must be within the allowed region';
@@ -109,6 +113,9 @@ export interface AddressInputProps extends Omit<
    * matching the given country and optionally region are accepted (autocomplete selection and manual submit).
    */
   accept?: AcceptAddress;
+
+  /** Data source for countries/regions datasets. Defaults to the library's built-in data. */
+  data?: AddressData;
 }
 
 export interface AddressInputRef extends HTMLInputElement {
@@ -210,9 +217,12 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
     defaultAddress,
     prefill,
     accept,
+    data: dataProp,
     error: errorProp,
     ...rest
   } = props;
+
+  const addressData = dataProp ?? defaultAddressData;
 
   const formatProvider = formatProp ?? international;
 
@@ -236,8 +246,23 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
   const [manualFormCountry, setManualFormCountry] = useState('');
   const [manualFormError, setManualFormError] = useState<string | null>(null);
   const [restrictionError, setRestrictionError] = useState<string | null>(null);
+  const [manualRegionsLoading, setManualRegionsLoading] = useState(false);
+  const [manualStateOptions, setManualStateOptions] = useState<
+    { code: string; name: string }[] | undefined
+  >(undefined);
+  const [manualPostcodesLoading, setManualPostcodesLoading] = useState(false);
+  const [manualPostcodeOptions, setManualPostcodeOptions] = useState<
+    readonly string[] | undefined
+  >(undefined);
+  const [manualSuburbsLoading, setManualSuburbsLoading] = useState(false);
+  const [manualSuburbOptions, setManualSuburbOptions] = useState<
+    readonly string[] | undefined
+  >(undefined);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
+  const regionsRequestIdRef = useRef(0);
+  const postcodesRequestIdRef = useRef(0);
+  const suburbsRequestIdRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   /** When true, the next focus/click open is ignored (modal just closed and returnFocus refocused the input). */
   const manualModalJustClosedRef = useRef(false);
@@ -420,7 +445,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
         .trim()
         .toUpperCase()
     : null;
-  const allCountries = getCountriesSorted();
+  const allCountries = getCountriesSorted(addressData);
   const manualCountryList = (
     acceptCountryCode
       ? allCountries.filter((c) => c.code.toUpperCase() === acceptCountryCode)
@@ -435,21 +460,101 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
         .trim()
         .toUpperCase()
     : null;
-  const stateOptionsRaw = getStatesForCountry(manualFormCountry);
   const manualStateList = (
-    stateOptionsRaw
+    manualStateOptions
       ? acceptRegionAbbr
-        ? stateOptionsRaw.filter(
+        ? manualStateOptions.filter(
             (s) => s.code.toUpperCase() === acceptRegionAbbr
           )
-        : stateOptionsRaw
+        : manualStateOptions
       : undefined
   )?.map((s) => ({ value: s.code, label: s.name }));
+
+  useEffect(() => {
+    const code = manualFormCountry.trim();
+    const reqId = ++regionsRequestIdRef.current;
+
+    if (!code || !addressData.regions) {
+      setManualRegionsLoading(false);
+      setManualStateOptions(undefined);
+      return;
+    }
+
+    setManualRegionsLoading(true);
+    void addressData
+      .regions(code)
+      .then((regions) => {
+        if (regionsRequestIdRef.current !== reqId) return;
+        if (!regions) {
+          setManualStateOptions(undefined);
+          setManualRegionsLoading(false);
+          setManualFormState('');
+          return;
+        }
+        setManualStateOptions(getStateOptionsFromRegions(regions));
+        setManualRegionsLoading(false);
+      })
+      .catch(() => {
+        if (regionsRequestIdRef.current !== reqId) return;
+        setManualStateOptions(undefined);
+        setManualRegionsLoading(false);
+      });
+  }, [manualFormCountry, addressData]);
+
+  useEffect(() => {
+    const code = manualFormCountry.trim();
+    const reqId = ++postcodesRequestIdRef.current;
+
+    if (!code || !addressData.postcodes) {
+      setManualPostcodesLoading(false);
+      setManualPostcodeOptions(undefined);
+      return;
+    }
+
+    setManualPostcodesLoading(true);
+    void addressData
+      .postcodes(code)
+      .then((postcodes) => {
+        if (postcodesRequestIdRef.current !== reqId) return;
+        setManualPostcodeOptions(postcodes);
+        setManualPostcodesLoading(false);
+      })
+      .catch(() => {
+        if (postcodesRequestIdRef.current !== reqId) return;
+        setManualPostcodeOptions(undefined);
+        setManualPostcodesLoading(false);
+      });
+  }, [manualFormCountry, addressData]);
+
+  useEffect(() => {
+    const code = manualFormCountry.trim();
+    const reqId = ++suburbsRequestIdRef.current;
+
+    if (!code || !addressData.suburbs) {
+      setManualSuburbsLoading(false);
+      setManualSuburbOptions(undefined);
+      return;
+    }
+
+    setManualSuburbsLoading(true);
+    void addressData
+      .suburbs(code)
+      .then((suburbs) => {
+        if (suburbsRequestIdRef.current !== reqId) return;
+        setManualSuburbOptions(suburbs);
+        setManualSuburbsLoading(false);
+      })
+      .catch(() => {
+        if (suburbsRequestIdRef.current !== reqId) return;
+        setManualSuburbOptions(undefined);
+        setManualSuburbsLoading(false);
+      });
+  }, [manualFormCountry, addressData]);
 
   const effectiveError = restrictionError ?? errorProp;
 
   // When no results: show disabled no-results message; when !preventManualEntry also show selectable "Enter manually".
-  const data: (string | ComboboxItem)[] = showNoResults
+  const comboboxData: (string | ComboboxItem)[] = showNoResults
     ? !preventManualEntry
       ? [
           { value: NO_RESULTS_VALUE, label: '', disabled: true },
@@ -544,32 +649,64 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
             </Grid.Col>
             {/* Row 5: Suburb, Postcode (2 columns) */}
             <Grid.Col span={6}>
-              <TextInput
-                label="Suburb"
-                placeholder="Suburb / City"
-                value={manualFormSuburb}
-                onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
-              />
+              {manualSuburbOptions !== undefined || manualSuburbsLoading ? (
+                <Autocomplete
+                  label="Suburb"
+                  placeholder="Suburb / City"
+                  value={manualFormSuburb}
+                  onChange={setManualFormSuburb}
+                  data={manualSuburbOptions ? [...manualSuburbOptions] : []}
+                  disabled={manualSuburbsLoading}
+                  rightSection={
+                    manualSuburbsLoading ? <Loader size="xs" /> : undefined
+                  }
+                />
+              ) : (
+                <TextInput
+                  label="Suburb"
+                  placeholder="Suburb / City"
+                  value={manualFormSuburb}
+                  onChange={(e) => setManualFormSuburb(e.currentTarget.value)}
+                />
+              )}
             </Grid.Col>
             <Grid.Col span={6}>
-              <TextInput
-                label="Postcode"
-                placeholder="Postcode"
-                value={manualFormPostcode}
-                onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
-              />
+              {manualPostcodeOptions !== undefined || manualPostcodesLoading ? (
+                <Autocomplete
+                  label="Postcode"
+                  placeholder="Postcode"
+                  value={manualFormPostcode}
+                  onChange={setManualFormPostcode}
+                  data={manualPostcodeOptions ? [...manualPostcodeOptions] : []}
+                  disabled={manualPostcodesLoading}
+                  rightSection={
+                    manualPostcodesLoading ? <Loader size="xs" /> : undefined
+                  }
+                />
+              ) : (
+                <TextInput
+                  label="Postcode"
+                  placeholder="Postcode"
+                  value={manualFormPostcode}
+                  onChange={(e) => setManualFormPostcode(e.currentTarget.value)}
+                />
+              )}
             </Grid.Col>
             {/* Row 6: State, Country (2 columns) */}
             <Grid.Col span={6}>
-              {manualStateList !== undefined ? (
+              {manualStateList !== undefined || manualRegionsLoading ? (
                 <Select
                   label="State / Province"
                   placeholder="State or territory"
                   value={manualFormState || null}
                   onChange={(v) => setManualFormState(v ?? '')}
-                  data={manualStateList}
+                  data={manualStateList ?? []}
                   clearable
                   searchable
+                  disabled={manualRegionsLoading}
+                  rightSection={
+                    manualRegionsLoading ? <Loader size="xs" /> : undefined
+                  }
                 />
               ) : (
                 <TextInput
@@ -587,8 +724,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
                 value={manualFormCountry || null}
                 onChange={(v) => {
                   setManualFormCountry(v ?? '');
-                  if (v != null && getStatesForCountry(v) === undefined)
-                    setManualFormState('');
+                  setManualFormState('');
                 }}
                 data={manualCountryList}
                 searchable
@@ -635,7 +771,7 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
       {nameProp ? renderHiddenInputs(nameProp, address) : null}
       <Autocomplete
         ref={inputRef}
-        data={data}
+        data={comboboxData}
         value={displayValue}
         onChange={handleChange}
         onOptionSubmit={handleOptionSubmit}

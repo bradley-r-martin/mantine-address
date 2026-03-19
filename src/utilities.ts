@@ -1,11 +1,13 @@
 import type { AcceptAddress, Address, Country, Region } from './types';
-import { COUNTRIES } from './regions';
+import type { AddressData } from './data';
+import { defaultAddressData } from './data';
 
 /** Canonical list of countries (ISO 3166-1 alpha-2 code + name), sorted by name. */
-export function getCountriesSorted(): readonly Country[] {
-  return Object.values(COUNTRIES).sort((a, b) =>
-    a.name.localeCompare(b.name, 'en')
-  );
+export function getCountriesSorted(
+  data: AddressData = defaultAddressData
+): readonly Country[] {
+  // AddressData is the canonical source; keep this helper for compatibility.
+  return [...data.countries].sort((a, b) => a.name.localeCompare(b.name, 'en'));
 }
 
 function isRegion(value: string | Region): value is Region {
@@ -47,16 +49,11 @@ export function getStateOptionsFromCountry(
   return regions ? regionsToStateOptions(regions) : undefined;
 }
 
-/**
- * Returns the list of states/territories for a country when configured (e.g. AU, US).
- * Returns undefined for countries that have no state list, so the UI can show a text input instead.
- */
-export function getStatesForCountry(
-  code: string
-): { code: string; name: string }[] | undefined {
-  const upper = code.toUpperCase();
-  const country = COUNTRIES[upper];
-  return country ? getStateOptionsFromCountry(country) : undefined;
+/** Returns state options (code + name) from regions record. */
+export function getStateOptionsFromRegions(
+  regions: Record<string, { name: string; abbreviation: string }>
+): { code: string; name: string }[] {
+  return regionsToStateOptions(regions);
 }
 
 // --- Accept/restrictions helpers ---

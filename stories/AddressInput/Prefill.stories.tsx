@@ -53,6 +53,14 @@ export const CountryAndRegionConstants: Story = {
       />
     </Stack>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Usage:\n\n```tsx\nimport { AddressInput, AUSTRALIA } from 'mantine-address';\n\n<AddressInput\n  provider={null}\n  prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}\n/>\n```\n",
+      },
+    },
+  },
 };
 
 export const CountryOnly: Story = {
@@ -73,6 +81,14 @@ export const CountryOnly: Story = {
       />
     </Stack>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Usage:\n\n```tsx\nimport { AddressInput, AUSTRALIA } from 'mantine-address';\n\n<AddressInput provider={null} prefill={{ country: AUSTRALIA }} />\n```\n",
+      },
+    },
+  },
 };
 
 export const PrefillWithAccept: Story = {
@@ -101,6 +117,14 @@ export const PrefillWithAccept: Story = {
       />
     </Stack>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Usage:\n\n```tsx\nimport { AddressInput, AUSTRALIA } from 'mantine-address';\n\n<AddressInput\n  provider={null}\n  prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}\n  accept={{ country: AUSTRALIA, region: AUSTRALIA.NEW_SOUTH_WALES }}\n/>\n```\n",
+      },
+    },
+  },
 };
 
 export const PrefillWithProvider: Story = {
@@ -123,4 +147,12 @@ export const PrefillWithProvider: Story = {
       />
     </Stack>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Usage:\n\n```tsx\nimport { AddressInput, AUSTRALIA } from 'mantine-address';\n\n<AddressInput\n  provider={provider}\n  prefill={{ country: AUSTRALIA, state: AUSTRALIA.VICTORIA }}\n/>\n```\n",
+      },
+    },
+  },
 };
