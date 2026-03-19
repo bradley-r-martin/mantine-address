@@ -30,7 +30,7 @@ The component SHALL accept an optional boolean prop `preventManualEntry`. When o
 
 ### Requirement: Manual-entry modal presents a form and commits an Address
 
-The component SHALL provide a modal that contains a form for entering address fields. The form SHALL collect data that can be represented as an `Address`. The form SHALL include one form control for each of the following `Address` fields: `building_name`, `level`, `unit`, `lot_no`, `street_number`, `street_name`, `street_type`, `street_suffix`, `suburb`, `state`, `postcode`, `country`. The form SHALL NOT include controls for `place_id`, `latitude`, or `longitude`. The **Country** field SHALL be implemented as a **select** control populated from the library's canonical list of countries. The **State** field SHALL be implemented as a **select** control when the selected country has a configured list of states/territories (e.g. Australia, United States), and SHALL be implemented as a **plain text input** when the selected country has no configured state list, so that users can still enter a state/province/region for any country. All other listed fields SHALL use text inputs as before. The form SHALL be laid out in a responsive grid with fields in the following order and structure: Row 1 (3 columns): Unit, Lot no, Level; Row 2 (full width): Building name; Row 3 (2 columns): Street number, Street name; Row 4 (2 columns): Street type, Street suffix; Row 5 (2 columns): Suburb, Postcode; Row 6 (2 columns): State, Country. Multi-column rows SHALL distribute space evenly; Building name SHALL span the full width of the form. On submit (e.g. "Save" or "Apply"), the component SHALL build an `Address` from the entered values (including only non-empty trimmed values for each field), SHALL set the selected address to that value, SHALL invoke the selection callback (`onChange`) with that address, SHALL close the modal, and SHALL update the input display using the active format provider. The modal SHALL be dismissible (e.g. Escape or cancel button) without committing; in that case the address and input value SHALL NOT change.
+The component SHALL provide a modal that contains a form for entering address fields. The form SHALL collect data that can be represented as an `Address`. The form SHALL include one form control for each of the following `Address` fields: `building_name`, `level`, `unit`, `lot_no`, `street_number`, `street_name`, `street_type`, `street_suffix`, `suburb`, `state`, `postcode`, `country`. The form SHALL NOT include controls for `place_id`, `latitude`, or `longitude`. The **Country** field SHALL be implemented as a **select** control populated from the configured countries catalog (e.g. `data.countries`). The **State** field SHALL be implemented as a **select** control when the selected country has a configured list of states/territories available from the configured regions mechanism (e.g. `await data.regions(countryCode)` resolves to a dataset), and SHALL be implemented as a **plain text input** when the selected country has no configured state list (e.g. `data.regions` is absent, or resolves to `undefined` for that country), so that users can still enter a state/province/region for any country. All other listed fields SHALL use text inputs as before. The form SHALL be laid out in a responsive grid with fields in the following order and structure: Row 1 (3 columns): Unit, Lot no, Level; Row 2 (full width): Building name; Row 3 (2 columns): Street number, Street name; Row 4 (2 columns): Street type, Street suffix; Row 5 (2 columns): Suburb, Postcode; Row 6 (2 columns): State, Country. Multi-column rows SHALL distribute space evenly; Building name SHALL span the full width of the form. On submit (e.g. "Save" or "Apply"), the component SHALL build an `Address` from the entered values (including only non-empty trimmed values for each field), SHALL set the selected address to that value, SHALL invoke the selection callback (`onChange`) with that address, SHALL close the modal, and SHALL update the input display using the active format provider. The modal SHALL be dismissible (e.g. Escape or cancel button) without committing; in that case the address and input value SHALL NOT change.
 
 #### Scenario: User submits the manual form
 
@@ -68,7 +68,7 @@ The component SHALL provide a modal that contains a form for entering address fi
 
 - **WHEN** the manual-entry modal is open
 - **THEN** the Country field SHALL be rendered as a select (dropdown) control
-- **THEN** the select SHALL be populated from the library's canonical list of countries (e.g. code and/or name)
+- **THEN** the select SHALL be populated from the configured countries catalog (e.g. `data.countries`)
 - **THEN** the user SHALL be able to choose one country from the list
 
 #### Scenario: State is a select when country has state list
@@ -77,6 +77,22 @@ The component SHALL provide a modal that contains a form for entering address fi
 - **THEN** the State field SHALL be rendered as a select (dropdown) control
 - **THEN** the select SHALL be populated with the states/territories for that country
 - **THEN** the user SHALL be able to choose one state from the list or leave it unset
+
+### Requirement: Manual-entry shows a loading state while resolving regions dataset
+
+When the component needs to determine whether State should be a select and/or to populate State options for a selected country, and the regions dataset is resolved asynchronously (e.g. via `data.regions(countryCode)`), the manual-entry form SHALL present a loading state while resolution is pending.
+
+#### Scenario: State control indicates loading during regions resolution
+
+- **WHEN** the manual-entry modal is open
+- **AND** the user selects a country
+- **AND** the component begins resolving the regions dataset for that country via an async mechanism
+- **THEN** the State control SHALL indicate a loading state until the resolution completes
+
+#### Scenario: State control updates after regions resolution completes
+
+- **WHEN** the regions dataset resolution completes for the selected country
+- **THEN** the State control SHALL update to a select if a dataset was resolved, otherwise remain (or become) a text input
 
 #### Scenario: State is a text input when country has no state list
 
