@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { MantineProvider, Stack, Text, Code } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
-import { COUNTRIES, REGIONS } from '@/regions';
+import { AUSTRALIA } from '@/regions';
 import { emptyProvider } from '../mocks/addressInputMocks';
 
 const meta: Meta<typeof AddressInput> = {
@@ -13,7 +13,7 @@ const meta: Meta<typeof AddressInput> = {
     docs: {
       description: {
         component:
-          'Use the **prefill** prop to pre-fill the manual-entry form with constants (e.g. `COUNTRIES.AU`, `REGIONS.NEW_SOUTH_WALES`). Prefer constants over string codes for type safety and consistency with the `accept` prop.',
+          'Use the **prefill** prop to pre-fill the manual-entry form with constants (e.g. `AUSTRALIA`, `AUSTRALIA.NEW_SOUTH_WALES`). Prefer constants over string codes for type safety and consistency with the `accept` prop.',
       },
     },
   },
@@ -36,7 +36,7 @@ export const CountryAndRegionConstants: Story = {
       <Text size="sm" c="dimmed">
         <Code>
           prefill=
-          {'{{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}'}
+          {'{{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}'}
         </Code>{' '}
         — open the manual modal to see Australia and New South Wales pre-filled.
       </Text>
@@ -45,8 +45,8 @@ export const CountryAndRegionConstants: Story = {
           typeof AddressInput
         >)}
         prefill={{
-          country: COUNTRIES.AU,
-          state: REGIONS.NEW_SOUTH_WALES,
+          country: AUSTRALIA,
+          state: AUSTRALIA.NEW_SOUTH_WALES,
         }}
         label="Address"
         placeholder="Click to enter address manually…"
@@ -60,14 +60,14 @@ export const CountryOnly: Story = {
   render: () => (
     <Stack gap="xs" style={{ maxWidth: 480 }}>
       <Text size="sm" c="dimmed">
-        <Code>prefill={'{{ country: COUNTRIES.AU }}'}</Code> — only country is
+        <Code>prefill={'{{ country: AUSTRALIA }}'}</Code> — only country is
         pre-filled; state and other fields are empty when the modal opens.
       </Text>
       <AddressInput
         {...({ provider: null } as unknown as ComponentProps<
           typeof AddressInput
         >)}
-        prefill={{ country: COUNTRIES.AU }}
+        prefill={{ country: AUSTRALIA }}
         label="Address"
         placeholder="Click to enter address manually…"
       />
@@ -89,12 +89,12 @@ export const PrefillWithAccept: Story = {
           typeof AddressInput
         >)}
         prefill={{
-          country: COUNTRIES.AU,
-          state: REGIONS.NEW_SOUTH_WALES,
+          country: AUSTRALIA,
+          state: AUSTRALIA.NEW_SOUTH_WALES,
         }}
         accept={{
-          country: COUNTRIES.AU,
-          region: REGIONS.NEW_SOUTH_WALES,
+          country: AUSTRALIA,
+          region: AUSTRALIA.NEW_SOUTH_WALES,
         }}
         label="Address"
         placeholder="Click to enter address manually…"
@@ -115,8 +115,8 @@ export const PrefillWithProvider: Story = {
       <AddressInput
         provider={emptyProvider}
         prefill={{
-          country: COUNTRIES.AU,
-          state: REGIONS.VICTORIA,
+          country: AUSTRALIA,
+          state: AUSTRALIA.VICTORIA,
         }}
         label="Address"
         placeholder="Type then choose Enter manually…"

@@ -8,7 +8,7 @@ import type {
   AddressSuggestion,
 } from '@/types';
 import { australian, type AddressFormatProvider } from '@/formatters';
-import { COUNTRIES, REGIONS } from '@/regions';
+import { COUNTRIES, AUSTRALIA } from '@/regions';
 
 const mockSuggestions: AddressSuggestion[] = [
   { id: 'id1', label: '123 Main St, Springfield, IL' },
@@ -216,8 +216,8 @@ describe('AddressInput', () => {
               typeof AddressInput
             >)}
             prefill={{
-              country: COUNTRIES.AU,
-              state: REGIONS.NEW_SOUTH_WALES,
+              country: AUSTRALIA,
+              state: AUSTRALIA.NEW_SOUTH_WALES,
               suburb: 'Sydney',
               postcode: '2000',
             }}
@@ -250,7 +250,7 @@ describe('AddressInput', () => {
               typeof AddressInput
             >)}
             defaultAddress={{ country: 'US', street_name: 'Main St' }}
-            prefill={{ country: COUNTRIES.AU }}
+            prefill={{ country: AUSTRALIA }}
           />
         </MantineProvider>
       );
@@ -276,7 +276,7 @@ describe('AddressInput', () => {
             {...({ provider: null } as unknown as React.ComponentProps<
               typeof AddressInput
             >)}
-            prefill={{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}
+            prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}
           />
         </MantineProvider>
       );

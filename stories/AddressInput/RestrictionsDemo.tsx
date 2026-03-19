@@ -2,12 +2,13 @@ import { useState, useMemo } from 'react';
 import type { ComponentProps } from 'react';
 import { Stack, Group, Select, Text } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
-import { countries, COUNTRIES, getStatesForCountry } from '@/regions';
+import { COUNTRIES } from '@/regions';
+import { getCountriesSorted, getStatesForCountry } from '@/utilities';
 import type { AddressLookupProvider } from '@/types';
 
 const COUNTRY_OPTIONS = [
   { value: '', label: 'Any' },
-  ...countries.map((c) => ({ value: c.code, label: c.name })),
+  ...getCountriesSorted().map((c) => ({ value: c.code, label: c.name })),
 ];
 
 export interface RestrictionsDemoProps {

@@ -17,13 +17,13 @@ export type {
   GetSuggestionsOptions,
   AddressLookupProvider,
   PrefillAddress,
+  Country,
+  Region,
 } from './types';
 
+export { COUNTRIES, AUSTRALIA, UNITED_STATES } from './regions';
 export {
-  countries,
-  COUNTRIES,
+  getCountriesSorted,
   getStatesForCountry,
-  REGIONS,
-  REGIONS_US,
-} from './regions';
-export type { Country, Region } from './regions';
+  getRegionsFromCountry,
+} from './utilities';

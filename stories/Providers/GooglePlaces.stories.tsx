@@ -15,7 +15,8 @@ import { AddressInput } from '@/AddressInput';
 import type { Address } from '@/types';
 import { international } from '@/formatters';
 import { GooglePlacesProvider } from '@/providers/GooglePlacesProvider';
-import { countries, COUNTRIES, getStatesForCountry } from '@/regions';
+import { COUNTRIES } from '@/regions';
+import { getCountriesSorted, getStatesForCountry } from '@/utilities';
 
 const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
   | string
@@ -23,7 +24,7 @@ const BUILD_TIME_KEY = import.meta.env['STORYBOOK_GOOGLE_MAPS_API_KEY'] as
 
 const COUNTRY_OPTIONS = [
   { value: '', label: 'Any' },
-  ...countries.map((c) => ({ value: c.code, label: c.name })),
+  ...getCountriesSorted().map((c) => ({ value: c.code, label: c.name })),
 ];
 
 type ScriptState = 'idle' | 'loading' | 'loaded' | 'error';

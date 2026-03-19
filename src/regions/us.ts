@@ -1,8 +1,8 @@
-import type { Country, Region } from './types';
+import type { Country } from '../types';
 
-export const UNITED_STATES: Country = { code: 'US', name: 'United States' };
-
-export const REGIONS: Record<string, Region> = {
+export const UNITED_STATES: Country = {
+  code: 'US',
+  name: 'United States',
   ALABAMA: {
     name: 'Alabama',
     abbreviation: 'AL',
@@ -259,5 +259,3 @@ export const REGIONS: Record<string, Region> = {
     location: { latitude: 43.076, longitude: -107.2903, radius: 350000 },
   },
 };
-
-export default { ...UNITED_STATES, REGIONS };
