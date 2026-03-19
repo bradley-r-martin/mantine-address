@@ -1,4 +1,20 @@
-import type { Country, Region } from './regions';
+/** Region (state/province) with location for autocomplete bias. */
+export interface Region {
+  name: string;
+  abbreviation: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    radius: number;
+  };
+}
+
+/** Country entry for use in a Country select (e.g. ISO 3166-1 alpha-2 code + display name). May also carry region entries as named properties (e.g. AUSTRALIA.NEW_SOUTH_WALES). */
+export interface Country {
+  code: string;
+  name: string;
+  [key: string]: string | Region;
+}
 
 export interface AddressSuggestion {
   id: string;
@@ -50,7 +66,7 @@ export interface AcceptAddress {
 /**
  * Optional prefill for the manual-entry form. Same shape as partial Address except
  * country and state accept Country/Region objects so consumers can use constants
- * (e.g. prefill={{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}).
+ * (e.g. prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}).
  */
 export interface PrefillAddress {
   building_name?: string;

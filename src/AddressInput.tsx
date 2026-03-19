@@ -25,8 +25,8 @@ import type {
   PrefillAddress,
 } from './types';
 import { international, type AddressFormatProvider } from './formatters';
-import { addressSatisfiesRestrictions } from './restrictions';
-import { countries, getStatesForCountry } from './regions';
+import { addressSatisfiesRestrictions } from './utilities';
+import { getCountriesSorted, getStatesForCountry } from './utilities';
 
 /** Default validation message when an address does not satisfy restrictions. */
 const RESTRICTION_ERROR_MESSAGE = 'Address must be within the allowed region';
@@ -100,7 +100,7 @@ export interface AddressInputProps extends Omit<
   defaultAddress?: Partial<Address>;
   /**
    * Optional prefill for the manual-entry form. Prefer this over defaultAddress when using
-   * constants (e.g. prefill={{ country: COUNTRIES.AU, state: REGIONS.NEW_SOUTH_WALES }}).
+   * constants (e.g. prefill={{ country: AUSTRALIA, state: AUSTRALIA.NEW_SOUTH_WALES }}).
    * When both prefill and defaultAddress are set, prefill wins for overlapping fields.
    */
   prefill?: PrefillAddress;
@@ -420,10 +420,11 @@ export const AddressInput = factory<AddressInputFactory>((_props, ref) => {
         .trim()
         .toUpperCase()
     : null;
+  const allCountries = getCountriesSorted();
   const manualCountryList = (
     acceptCountryCode
-      ? countries.filter((c) => c.code.toUpperCase() === acceptCountryCode)
-      : countries
+      ? allCountries.filter((c) => c.code.toUpperCase() === acceptCountryCode)
+      : allCountries
   ).map((c) => ({ value: c.code, label: c.name }));
 
   const acceptRegionAbbr = accept?.region

@@ -1,8 +1,8 @@
-import type { Region, Country } from './types';
+import type { Country } from '../types';
 
-export const AUSTRALIA: Country = { code: 'AU', name: 'Australia' };
-
-export const REGIONS: Record<string, Region> = {
+export const AUSTRALIA: Country = {
+  code: 'AU',
+  name: 'Australia',
   NEW_SOUTH_WALES: {
     name: 'New South Wales',
     abbreviation: 'NSW',
@@ -76,5 +76,3 @@ export const REGIONS: Record<string, Region> = {
     },
   },
 };
-
-export default { ...AUSTRALIA, REGIONS };

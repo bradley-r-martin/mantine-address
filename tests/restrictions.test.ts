@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { addressSatisfiesRestrictions } from '@/restrictions';
+import { addressSatisfiesRestrictions } from '@/utilities';
 import type { AcceptAddress } from '@/types';
-import { COUNTRIES, REGIONS } from '@/regions';
+import { AUSTRALIA } from '@/regions';
 
 describe('addressSatisfiesRestrictions', () => {
   it('returns true when accept is undefined', () => {
@@ -18,7 +18,7 @@ describe('addressSatisfiesRestrictions', () => {
   });
 
   describe('accept.country only', () => {
-    const accept: AcceptAddress = { country: COUNTRIES.AU };
+    const accept: AcceptAddress = { country: AUSTRALIA };
 
     it('passes when address country matches', () => {
       expect(addressSatisfiesRestrictions({ country: 'AU' }, accept)).toBe(
@@ -52,8 +52,8 @@ describe('addressSatisfiesRestrictions', () => {
 
   describe('accept.country + accept.region (AND semantics)', () => {
     const accept: AcceptAddress = {
-      country: COUNTRIES.AU,
-      region: REGIONS.NEW_SOUTH_WALES,
+      country: AUSTRALIA,
+      region: AUSTRALIA.NEW_SOUTH_WALES,
     };
 
     it('passes when both country and state match', () => {
