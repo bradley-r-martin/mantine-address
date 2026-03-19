@@ -6,109 +6,37 @@ TBD - created by archiving change setup-library. Update Purpose after archive.
 
 ## Requirements
 
-### Requirement: README describes the project and usage
+### Requirement: Documentation pages provide a consistent structure
 
-The repository SHALL include a README (e.g. README.md) that describes the project, how to install it, basic usage, and the main development scripts (e.g. format, lint, test, build, Storybook) so that users and developers can onboard quickly. The README SHALL refer to the single address component as **AddressInput** and state that it supports **autocomplete only** and that **a provider is required**; it MUST NOT imply that the component can operate without a provider or that there is a non-autocomplete (e.g. freeform manual entry) mode.
+Documentation-style pages SHALL present content using a visually rich, hierarchical layout that includes: a hero header section with package identity; section-based navigation with anchor links; clearly titled content sections with interactive examples and code snippets; and a props/API reference section. The layout SHALL use a responsive two-column grid (navigation sidebar + content) on desktop and a single-column layout on mobile. The visual design SHALL be distinctive and polished, using Mantine primitives for structure and Tailwind CSS utilities for decorative styling.
 
-#### Scenario: README exists and is discoverable
+#### Scenario: Documentation page has hero, navigation, and content sections
 
-- **WHEN** a user or contributor opens the repository root
-- **THEN** a README file (e.g. README.md) exists and is the default view on the hosting platform (e.g. GitHub)
+- **WHEN** a developer opens a canonical Storybook documentation entry for the library component
+- **THEN** the page displays a hero header with the package name, tagline, and install command
+- **THEN** a navigation sidebar (desktop) or navigation menu (mobile) lists all content sections
+- **THEN** content sections are clearly titled with interactive examples and code snippets
 
-#### Scenario: README includes install and usage
+#### Scenario: Documentation page uses responsive layout
 
-- **WHEN** a user reads the README
-- **THEN** it contains instructions or links for installing the package (e.g. npm install) and at least minimal usage or link to docs (e.g. Storybook)
+- **WHEN** a developer views the documentation page on a desktop viewport
+- **THEN** the page uses a two-column layout with navigation sidebar and content area
+- **WHEN** a developer views the documentation page on a mobile viewport
+- **THEN** the layout collapses to a single column
 
-#### Scenario: README includes development scripts
+### Requirement: Examples include curated code snippets
 
-- **WHEN** a developer reads the README
-- **THEN** it documents or references the main scripts (e.g. format, lint, test, build, Storybook) so they know how to run quality checks and build
+Documentation examples SHALL display a live interactive preview in a visually distinct sandbox area with a collapsible code panel below. The code panel SHALL contain a syntax-highlighted, copy-to-clipboard-enabled code snippet that demonstrates the recommended usage pattern. The code panel SHALL default to collapsed to keep the page scannable.
 
-#### Scenario: README states autocomplete only and provider required
-
-- **WHEN** a user reads the README
-- **THEN** it explicitly states that the AddressInput component provides autocomplete only and that a provider must be configured
-- **THEN** it does not imply that the field can work without a provider or that there is a non-autocomplete input mode
-
-### Requirement: .gitignore excludes common library artifacts
-
-The repository SHALL include a root `.gitignore` that excludes commonly ignored paths for a TypeScript/React library (e.g. `node_modules`, `dist`, `coverage`, `storybook-static`, `.env*`, and common OS/IDE files) so that build outputs, dependencies, and local files are not committed.
-
-#### Scenario: .gitignore is present
-
-- **WHEN** the repository is cloned
-- **THEN** a `.gitignore` file exists at the repository root
-
-#### Scenario: .gitignore excludes node_modules and dist
-
-- **WHEN** a developer runs a build or install
-- **THEN** paths such as `node_modules/` and `dist/` are ignored by Git (listed in `.gitignore` or equivalent)
-
-### Requirement: Contribution documentation exists
-
-The repository SHALL provide contribution documentation (e.g. CONTRIBUTING.md or an equivalent doc/section) that explains how to contribute, including branch strategy (PRs target `next`, must not change `package.json` version), **branch naming** (the PR branch name must match an OpenSpec change name, e.g. branch `setup-library` for `openspec/changes/setup-library/`), that releases are made by creating a GitHub Release (which triggers the release workflow), commit message format (e.g. Conventional Commits), pre-commit hooks, and that PRs must pass CI and use OpenSpec where applicable.
-
-#### Scenario: Contribution doc is present
-
-- **WHEN** a contributor looks for how to contribute
-- **THEN** a contribution document (e.g. CONTRIBUTING.md) exists in the repo or is linked from the README
-
-#### Scenario: Commit and PR expectations are documented
-
-- **WHEN** a contributor reads the contribution documentation
-- **THEN** it states that commits must follow the project’s commit format (e.g. Conventional Commits) and that PRs must pass CI (and use OpenSpec for changes when applicable)
-
-#### Scenario: Pre-commit and local checks are documented
-
-- **WHEN** a contributor reads the contribution documentation
-- **THEN** it explains that pre-commit hooks run (e.g. format check, lint) and how to run these checks locally before pushing
-
-#### Scenario: Branch strategy and release process are documented
-
-- **WHEN** a contributor reads the contribution documentation
-- **THEN** it explains that PRs target the integration branch (e.g. `next`), must not change `package.json` version, and that releases are created by opening a GitHub Release with the desired version (which triggers the release workflow to merge next into main, publish to npm, and deploy Storybook)
-
-#### Scenario: Branch naming is documented
-
-- **WHEN** a contributor reads the contribution documentation
-- **THEN** it states that the name of the branch used for a PR must match an OpenSpec change (e.g. branch `setup-library` for the change in `openspec/changes/setup-library/`), and that CI will fail if the branch name does not match a directory under `openspec/changes/`
-
-#### Scenario: Archive branch naming and restrictions are documented
-
-- **WHEN** a contributor reads the contribution documentation
-- **THEN** it explains that once a change has been archived, the archive commit must be made on a branch named `<change-name>-archive` (e.g. `setup-library-archive`), that both Husky and CI will verify the corresponding entry exists under `openspec/changes/archive/`, and that archive branch commits must contain only files under `openspec/` (no source code or configuration changes permitted)
-
-### Requirement: Stories are documentation-quality examples
-
-Storybook stories SHALL prioritize clarity, simplicity, and structure so that they serve as developer documentation rather than an ad-hoc testing harness.
-
-#### Scenario: Stories are concise and single-purpose
-
-- **WHEN** a developer opens an `AddressInput` story
-- **THEN** the story demonstrates one primary concept (e.g. controlled usage, manual-only mode, restrictions) without unrelated variations
-
-#### Scenario: Args-first stories are preferred
-
-- **WHEN** a story can be expressed using `args`
-- **THEN** the story uses `args` without additional wrapper components
-
-#### Scenario: Render stories are used only for real patterns
-
-- **WHEN** a story requires state to demonstrate a real integration pattern (e.g. controlled usage, form reset)
-- **THEN** the story uses `render` with minimal local state and avoids building a “mini app” inside the story
-
-#### Scenario: Provider setup complexity is isolated
-
-- **WHEN** a story requires external setup (e.g. loading Google Maps script)
-- **THEN** that setup appears only in provider-specific story groups (e.g. `Providers/Google Places`) and is not duplicated across unrelated story files
-
-#### Scenario: Documentation pages provide a consistent structure
-
-- **WHEN** a developer opens a canonical Storybook documentation entry for the library component (e.g. `AddressInput/…`)
-- **THEN** the entry is presented as a documentation-style page with clearly labeled sections (e.g. Overview, Usage, Props, Examples)
-
-#### Scenario: Examples include curated code snippets
+#### Scenario: Example shows live preview with collapsible code
 
 - **WHEN** a developer views an example within a documentation-style page
-- **THEN** a copy/paste-ready code snippet is provided adjacent to the live example and focuses on the recommended pattern for the prop(s) or integration being documented
+- **THEN** a live interactive preview is displayed in a bordered sandbox area
+- **THEN** a "Show code" toggle is visible below the preview
+- **THEN** clicking the toggle reveals a syntax-highlighted code snippet with a copy button
+
+#### Scenario: Code snippets are copy-paste-ready
+
+- **WHEN** a developer expands the code panel of an example
+- **THEN** the code snippet focuses on the recommended pattern for the prop(s) or integration being documented
+- **THEN** the snippet can be copied to clipboard via a copy button
