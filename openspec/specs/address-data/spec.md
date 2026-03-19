@@ -1,3 +1,11 @@
+# address-data Specification
+
+## Purpose
+
+Define how `AddressInput` receives address datasets: synchronous country catalogs, optional async region resolvers, and lazy-loaded defaults.
+
+## Requirements
+
 ### Requirement: AddressInput accepts a data object for address datasets
 
 The library SHALL define an `AddressData` interface and SHALL allow `AddressInput` to receive an optional `data` prop of that type. When `data` is omitted, the component SHALL use the library's default `AddressData` implementation.
@@ -54,9 +62,9 @@ If `data.regions` is not provided, the component SHALL behave as if no country h
 
 ### Requirement: Library default data supports lazy loading via dynamic import
 
-The library's default `AddressData` implementation SHOULD load regions datasets on demand (e.g. using dynamic `import()`), so that unused datasets are not required by consumers who do not need them.
+The library's default `AddressData` implementation SHALL load regions datasets on demand (e.g. using dynamic `import()`), so that unused datasets MUST NOT be required by consumers who do not need them.
 
 #### Scenario: Default data resolves regions lazily
 
 - **WHEN** a consumer uses `AddressInput` with the default `data` implementation
-- **THEN** regions datasets for configured countries SHOULD be loaded only when needed (e.g. when the manual-entry State control needs options for a selected country)
+- **THEN** regions datasets for configured countries SHALL be loaded only when needed (e.g. when the manual-entry State control needs options for a selected country)

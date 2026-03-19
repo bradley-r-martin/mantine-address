@@ -40,8 +40,6 @@ On submit (e.g. "Save" or "Apply"), the component SHALL build an `Address` from 
 - **THEN** the user SHALL be able to type any state, province, or region name
 - **THEN** the value SHALL be stored in `Address.state` as entered (trimmed)
 
-## ADDED Requirements
-
 ### Requirement: Manual-entry shows a loading state while resolving regions dataset
 
 When the component needs to determine whether State should be a select and/or to populate State options for a selected country, and the regions dataset is resolved asynchronously (e.g. via `data.regions(countryCode)`), the manual-entry form SHALL present a loading state while resolution is pending.
