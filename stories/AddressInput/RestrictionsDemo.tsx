@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ComponentProps } from 'react';
-import { Stack, Group, Select, Text } from '@mantine/core';
+import { Stack, Group, Select, Text, Badge } from '@mantine/core';
 import { AddressInput } from '@/AddressInput';
 import { COUNTRIES } from '@/regions';
 import { defaultAddressData } from '@/data';
@@ -93,6 +93,14 @@ export function RestrictionsDemo({
 
   return (
     <Stack gap="md" style={{ maxWidth: 480 }}>
+      <Group>
+        <Badge color="violet" variant="light">
+          TIP
+        </Badge>
+        <Text size="xs" c="dimmed">
+          Select Australia or United States to see region (state) restrictions.
+        </Text>
+      </Group>
       <Group wrap="nowrap" align="flex-end" gap="sm">
         <Select
           label="Restrict to country"
@@ -125,12 +133,6 @@ export function RestrictionsDemo({
           style={{ flex: 1 }}
         />
       </Group>
-      {accept && (
-        <Text size="sm" c="dimmed">
-          accept={'{{'} country: {countryCode}
-          {regionCode && `, region: ${regionCode}`} {'}}'}
-        </Text>
-      )}
       <AddressInput {...addressInputProps} />
     </Stack>
   );
